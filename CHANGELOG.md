@@ -12,7 +12,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
-## v1.1.1 (WIP)
+## v1.1.1 (2021-04-09)
 
 - Added CHANGELOG.md to repository. (!17)
 
