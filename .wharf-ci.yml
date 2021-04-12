@@ -1,0 +1,5 @@
+build:
+  azuredevops:
+    docker:
+      file: Dockerfile
+      tag: ${GIT_COMMIT},${GIT_TAG},latest
