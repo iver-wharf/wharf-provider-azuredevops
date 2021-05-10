@@ -35,7 +35,6 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 ## v1.0.0 (2020-11-27)
 
 - Removed groups table, a reflection of the changes from the API v1.0.0. (!14)
-
 - Changed version of Wharf API Go client from v0.1.3 to v0.1.4. (!13)
 
 ## v0.8.0 (2020-10-23)

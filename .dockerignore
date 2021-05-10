@@ -1,4 +1,12 @@
+.git
+.gitignore
+
 .dockerignore
 Dockerfile
+
 .wharf-ci.yml
-docs/
+docs
+
+package.json
+package-lock.json
+node_modules
