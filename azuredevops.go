@@ -22,67 +22,67 @@ const apiProjects string = "_apis/projects"
 const itemsPath string = "items"
 const refsPath string = "refs"
 
-type AzureDevOpsCreator struct {
-	Id          string `json:"id"`
+type azureDevOpsCreator struct {
+	ID          string `json:"id"`
 	DisplayName string `json:"displayName"`
-	Url         string `json:"url"`
+	URL         string `json:"url"`
 	UniqueName  string `json:"uniqueName"`
-	ImageUrl    string `json:"imageUrl"`
+	ImageURL    string `json:"imageUrl"`
 	Descriptor  string `json:"descriptor"`
 }
 
-type AzureDevOpsRef struct {
-	ObjectId string             `json:"objectId"`
+type azureDevOpsRef struct {
+	ObjectID string             `json:"objectId"`
 	Name     string             `json:"name"`
-	Creator  AzureDevOpsCreator `json:"creator"`
-	Url      string             `json:"url"`
+	Creator  azureDevOpsCreator `json:"creator"`
+	URL      string             `json:"url"`
 }
 
-type AzureDevOpsProject struct {
-	Id          string `json:"id"`
+type azureDevOpsProject struct {
+	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	Url         string `json:"url"`
+	URL         string `json:"url"`
 	State       string `json:"state"`
 	Revision    int64  `json:"revision"`
 	Visibility  string `json:"visibility"`
 }
 
-type AzureDevOpsRepository struct {
-	Id            string             `json:"id"`
+type azureDevOpsRepository struct {
+	ID            string             `json:"id"`
 	Name          string             `json:"name"`
-	Url           string             `json:"url"`
-	Project       AzureDevOpsProject `json:"project"`
+	URL           string             `json:"url"`
+	Project       azureDevOpsProject `json:"project"`
 	DefaultBranch string             `json:"defaultBranch"`
 	Size          int64              `json:"size"`
-	RemoteUrl     string             `json:"remoteUrl"`
-	SshUrl        string             `json:"sshUrl"`
+	RemoteURL     string             `json:"remoteUrl"`
+	SSHURL        string             `json:"sshUrl"`
 }
 
-type AzureDevOpsBranch struct {
+type azureDevOpsBranch struct {
 	Name          string
 	Ref           string
 	DefaultBranch bool
 }
 
-type AzureDevOpsPr struct {
+type azureDevOpsPR struct {
 	EventType string `json:"eventType" example:"git.pullrequest.created"`
 	Resource  struct {
-		PullRequestId uint   `json:"pullRequestId" example:"1"`
+		PullRequestID uint   `json:"pullRequestId" example:"1"`
 		SourceRefName string `json:"sourceRefName" example:"refs/heads/master"`
 	}
 }
 
-// RunAzureDevOpsHandler godoc
+// runAzureDevOpsHandler godoc
 // @Summary Import projects from Azure DevOps or refresh existing one
-// @Accept  json
-// @Produce  json
-// @Param import body main.Import _ "import object"
+// @Accept json
+// @Produce json
+// @Param import body importBody _ "import object"
 // @Success 200 "OK"
 // @Failure 400 "Bad request"
 // @Failure 401 "Unauthorized or missing jwt token"
 // @Router /azuredevops [post]
-func RunAzureDevOpsHandler(c *gin.Context) {
+func runAzureDevOpsHandler(c *gin.Context) {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	client := wharfapi.Client{
@@ -90,7 +90,7 @@ func RunAzureDevOpsHandler(c *gin.Context) {
 		AuthHeader: c.GetHeader("Authorization"),
 	}
 
-	i := Import{}
+	i := importBody{}
 	err := c.BindJSON(&i)
 	if err != nil {
 		c.Error(err)
@@ -107,8 +107,8 @@ func RunAzureDevOpsHandler(c *gin.Context) {
 	}
 
 	var token wharfapi.Token
-	if i.TokenId != 0 {
-		token, err = client.GetTokenById(i.TokenId)
+	if i.TokenID != 0 {
+		token, err = client.GetTokenById(i.TokenID)
 		if err != nil || token.TokenID == 0 {
 			fmt.Printf("Unable to get token. %+v", err)
 			c.JSON(http.StatusBadRequest, fmt.Sprintf("Unable to get token. %+v", err))
@@ -134,18 +134,18 @@ func RunAzureDevOpsHandler(c *gin.Context) {
 	fmt.Println("Token from db: ", token)
 
 	var provider wharfapi.Provider
-	if i.ProviderId != 0 {
-		provider, err = client.GetProviderById(i.ProviderId)
+	if i.ProviderID != 0 {
+		provider, err = client.GetProviderById(i.ProviderID)
 		if err != nil || provider.ProviderID == 0 {
 			fmt.Printf("Unable to get provider. %+v", err)
 			c.JSON(http.StatusBadRequest, fmt.Sprintf("Unable to get provider. %+v", err))
 			return
 		}
-		i.Url = provider.URL
+		i.URL = provider.URL
 	} else {
-		provider, err = client.GetProvider("azuredevops", i.Url, i.UploadUrl, token.TokenID)
+		provider, err = client.GetProvider("azuredevops", i.URL, i.UploadURL, token.TokenID)
 		if err != nil || provider.ProviderID == 0 {
-			provider, err = client.PostProvider(wharfapi.Provider{Name: "azuredevops", URL: i.Url, TokenID: token.TokenID})
+			provider, err = client.PostProvider(wharfapi.Provider{Name: "azuredevops", URL: i.URL, TokenID: token.TokenID})
 			if err != nil {
 				fmt.Println("Unable to put provider: ", err)
 				c.JSON(http.StatusBadRequest, fmt.Sprintf("Error: %+v", err))
@@ -155,14 +155,14 @@ func RunAzureDevOpsHandler(c *gin.Context) {
 	}
 	fmt.Println("Provider from db: ", provider)
 
-	url, err := BuildUrl(i.Url, i.Group, i.Project)
+	url, err := buildURL(i.URL, i.Group, i.Project)
 	if err != nil {
 		fmt.Println("Unable to build url: ", err)
 		c.JSON(http.StatusBadRequest, fmt.Sprintf("Error: %+v", err))
 		return
 	}
 
-	bodyBytes, err := GetBodyFromRequest(i.User, i.Token, url)
+	bodyBytes, err := getBodyFromRequest(i.User, i.Token, url)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, fmt.Sprintf("Error: %+v", err))
 		return
@@ -170,11 +170,11 @@ func RunAzureDevOpsHandler(c *gin.Context) {
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	projects := struct {
-		Value []AzureDevOpsProject `json:"value"`
+		Value []azureDevOpsProject `json:"value"`
 		Count int                  `json:"count"`
 	}{
 		Count: 1,
-		Value: make([]AzureDevOpsProject, 1)}
+		Value: make([]azureDevOpsProject, 1)}
 	if i.Project != "" {
 		err = json.Unmarshal(bodyBytes, &projects.Value[0])
 	} else {
@@ -187,14 +187,14 @@ func RunAzureDevOpsHandler(c *gin.Context) {
 	}
 
 	for _, project := range projects.Value {
-		buildDefinitionStr, err := GetAzureDevOpsBuildDefinition(i, project.Name)
+		buildDefinitionStr, err := getAzureDevOpsBuildDefinition(i, project.Name)
 		if err != nil {
 			fmt.Println("Unable to get build definition: ", err)
 			c.JSON(http.StatusBadRequest, fmt.Sprintf("Error: %+v", err))
 			return
 		}
 
-		gitUrl, err := GetGitUrl(provider, i.Group, project)
+		gitURL, err := getGitURL(provider, i.Group, project)
 		if err != nil {
 			fmt.Println("Unable to construct git url ", err)
 			c.JSON(http.StatusBadRequest, fmt.Sprintf("Error: %+v", err))
@@ -209,7 +209,7 @@ func RunAzureDevOpsHandler(c *gin.Context) {
 				BuildDefinition: buildDefinitionStr,
 				Description:     project.Description,
 				ProviderID:      provider.ProviderID,
-				GitURL:          gitUrl})
+				GitURL:          gitURL})
 
 		if err != nil {
 			fmt.Println("Unable to put project: ", err)
@@ -217,14 +217,14 @@ func RunAzureDevOpsHandler(c *gin.Context) {
 			return
 		}
 
-		repositoryBody, err := GetRepositories(i, project.Name)
+		repositoryBody, err := getRepositories(i, project.Name)
 		if err != nil {
 			fmt.Println("Unable to get project repository: ", err)
 			continue
 		}
 
 		repositories := struct {
-			Value []AzureDevOpsRepository `json:"value"`
+			Value []azureDevOpsRepository `json:"value"`
 			Count int                     `json:"count"`
 		}{}
 		err = json.Unmarshal(repositoryBody, &repositories)
@@ -238,12 +238,12 @@ func RunAzureDevOpsHandler(c *gin.Context) {
 			continue
 		}
 
-		if repositories.Value[0].Project.Id != project.Id {
+		if repositories.Value[0].Project.ID != project.ID {
 			fmt.Println("Repository is not connected with project.")
 			continue
 		}
 
-		projectBranches, err := GetProjectBranches(i, project.Name)
+		projectBranches, err := getProjectBranches(i, project.Name)
 		if err != nil {
 			fmt.Println("Unable to get project branches: ", err)
 			continue
@@ -268,21 +268,21 @@ func RunAzureDevOpsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, "OK")
 }
 
-// PrCreatedTrigger godoc
+// prCreatedTriggerHandler godoc
 // @Summary Triggers prcreated action on wharf-client
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Param projectid path int true "wharf project ID"
-// @Param AzureDevOpsPr body main.AzureDevOpsPr _ "AzureDevOps PR "
+// @Param azureDevOpsPR body azureDevOpsPR _ "AzureDevOps PR "
 // @Param environment query string true "wharf build environment"
 // @Success 200 "OK"
 // @Failure 400 "Bad request"
 // @Failure 401 "Unauthorized or missing jwt token"
 // @Router /azuredevops/triggers/{projectid}/pr/created [post]
-func PrCreatedTrigger(c *gin.Context) {
+func prCreatedTriggerHandler(c *gin.Context) {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	t := AzureDevOpsPr{}
+	t := azureDevOpsPR{}
 	if err := c.BindJSON(&t); err != nil {
 		c.Error(err)
 		c.JSON(http.StatusBadRequest, err)
@@ -329,21 +329,21 @@ func PrCreatedTrigger(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func GetGitUrl(provider wharfapi.Provider, group string, project AzureDevOpsProject) (string, error) {
-	providerUrl, err := url.Parse(provider.URL)
+func getGitURL(provider wharfapi.Provider, group string, project azureDevOpsProject) (string, error) {
+	providerURL, err := url.Parse(provider.URL)
 
 	if err != nil {
 		fmt.Println("Unable to parse provider url: ", err)
 		return "", err
 	}
 
-	gitUrl := fmt.Sprintf("git@%v:22/%v/%v/_git/%v", providerUrl.Host, group, project.Name, project.Name)
+	gitURL := fmt.Sprintf("git@%v:22/%v/%v/_git/%v", providerURL.Host, group, project.Name, project.Name)
 
-	return gitUrl, nil
+	return gitURL, nil
 
 }
 
-func GetBodyFromRequest(user string, token string, url string) ([]byte, error) {
+func getBodyFromRequest(user string, token string, url string) ([]byte, error) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		fmt.Println("Unable to get: ", err)
@@ -374,11 +374,11 @@ func GetBodyFromRequest(user string, token string, url string) ([]byte, error) {
 	return bodyBytes, nil
 }
 
-func GetProjectBranches(i Import, project string) ([]AzureDevOpsBranch, error) {
-	urlPath, err := url.Parse(i.Url)
+func getProjectBranches(i importBody, project string) ([]azureDevOpsBranch, error) {
+	urlPath, err := url.Parse(i.URL)
 	if err != nil {
 		fmt.Println("Unable to get url: ", err)
-		return []AzureDevOpsBranch{}, err
+		return []azureDevOpsBranch{}, err
 	}
 
 	urlPath.Path = fmt.Sprintf("%v/%v/%v/%v/%v", i.Group, project, apiRepositories, project, refsPath)
@@ -389,23 +389,23 @@ func GetProjectBranches(i Import, project string) ([]AzureDevOpsBranch, error) {
 
 	fmt.Println(urlPath.String())
 
-	body, err := GetBodyFromRequest(i.User, i.Token, urlPath.String())
+	body, err := getBodyFromRequest(i.User, i.Token, urlPath.String())
 
 	projectRefs := struct {
-		Value []AzureDevOpsRef `json:"value"`
+		Value []azureDevOpsRef `json:"value"`
 		Count int              `json:"count"`
 	}{}
 
 	err = json.Unmarshal(body, &projectRefs)
 	if err != nil {
 		fmt.Println("Unable to unmarshal refs: ", err)
-		return []AzureDevOpsBranch{}, err
+		return []azureDevOpsBranch{}, err
 	}
 
-	var projectBranches []AzureDevOpsBranch
+	var projectBranches []azureDevOpsBranch
 	for _, ref := range projectRefs.Value {
 		name := strings.TrimPrefix(ref.Name, "refs/heads/")
-		projectBranches = append(projectBranches, AzureDevOpsBranch{
+		projectBranches = append(projectBranches, azureDevOpsBranch{
 			Name: name,
 			Ref:  ref.Name,
 		})
@@ -414,8 +414,8 @@ func GetProjectBranches(i Import, project string) ([]AzureDevOpsBranch, error) {
 	return projectBranches, nil
 }
 
-func GetRepositories(i Import, project string) ([]byte, error) {
-	urlPath, err := url.Parse(i.Url)
+func getRepositories(i importBody, project string) ([]byte, error) {
+	urlPath, err := url.Parse(i.URL)
 	if err != nil {
 		fmt.Println("Unable to get url: ", err)
 		return []byte{}, err
@@ -427,11 +427,11 @@ func GetRepositories(i Import, project string) ([]byte, error) {
 	urlPath.RawQuery = data.Encode()
 	fmt.Println(urlPath.String())
 
-	return GetBodyFromRequest(i.User, i.Token, urlPath.String())
+	return getBodyFromRequest(i.User, i.Token, urlPath.String())
 }
 
-func GetAzureDevOpsBuildDefinition(i Import, project string) (string, error) {
-	urlPath, err := url.Parse(i.Url)
+func getAzureDevOpsBuildDefinition(i importBody, project string) (string, error) {
+	urlPath, err := url.Parse(i.URL)
 	if err != nil {
 		fmt.Println("Unable to get url: ", err)
 		return "", err
@@ -444,7 +444,7 @@ func GetAzureDevOpsBuildDefinition(i Import, project string) (string, error) {
 
 	fmt.Println(urlPath.String())
 
-	bodyBytes, err := GetBodyFromRequest(i.User, i.Token, urlPath.String())
+	bodyBytes, err := getBodyFromRequest(i.User, i.Token, urlPath.String())
 	if err != nil {
 		fmt.Println(err)
 		return "", err
@@ -454,7 +454,7 @@ func GetAzureDevOpsBuildDefinition(i Import, project string) (string, error) {
 	return bodyString, nil
 }
 
-func BuildUrl(urlStr string, group string, project string) (string, error) {
+func buildURL(urlStr string, group string, project string) (string, error) {
 	urlPath, err := url.Parse(urlStr)
 	if err != nil {
 		fmt.Println("Unable to get url: ", err)
