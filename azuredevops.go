@@ -78,9 +78,9 @@ type azureDevOpsPR struct {
 // @Accept json
 // @Produce json
 // @Param import body importBody _ "import object"
-// @Success 200 "OK"
-// @Failure 400 "Bad request"
-// @Failure 401 "Unauthorized or missing jwt token"
+// @Success 201 "Successfully imported"
+// @Failure 400 {object} string "Bad request"
+// @Failure 401 {object} string "Unauthorized or missing jwt token"
 // @Router /azuredevops [post]
 func runAzureDevOpsHandler(c *gin.Context) {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
@@ -94,7 +94,7 @@ func runAzureDevOpsHandler(c *gin.Context) {
 	err := c.BindJSON(&i)
 	if err != nil {
 		c.Error(err)
-		c.JSON(http.StatusBadRequest, err)
+		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -265,7 +265,7 @@ func runAzureDevOpsHandler(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, "OK")
+	c.Status(http.StatusCreated)
 }
 
 // prCreatedTriggerHandler godoc
@@ -275,9 +275,9 @@ func runAzureDevOpsHandler(c *gin.Context) {
 // @Param projectid path int true "wharf project ID"
 // @Param azureDevOpsPR body azureDevOpsPR _ "AzureDevOps PR "
 // @Param environment query string true "wharf build environment"
-// @Success 200 "OK"
-// @Failure 400 "Bad request"
-// @Failure 401 "Unauthorized or missing jwt token"
+// @Success 200 {object} wharfapi.ProjectRunResponse "OK"
+// @Failure 400 {object} string "Bad request"
+// @Failure 401 {object} string "Unauthorized or missing jwt token"
 // @Router /azuredevops/triggers/{projectid}/pr/created [post]
 func prCreatedTriggerHandler(c *gin.Context) {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
@@ -285,7 +285,7 @@ func prCreatedTriggerHandler(c *gin.Context) {
 	t := azureDevOpsPR{}
 	if err := c.BindJSON(&t); err != nil {
 		c.Error(err)
-		c.JSON(http.StatusBadRequest, err)
+		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 

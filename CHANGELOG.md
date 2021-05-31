@@ -12,6 +12,14 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
+## v1.2.0 (WIP)
+
+- Added endpoint `GET /version` that returns an object of version data of the
+  API itself. (#3)
+
+- Added Swagger spec metadata such as version that equals the version of the
+  API, contact information, and license. (#3)
+
 ## v1.1.1 (2021-04-09)
 
 - Added CHANGELOG.md to repository. (!17)
