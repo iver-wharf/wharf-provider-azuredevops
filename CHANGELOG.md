@@ -14,6 +14,8 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 ## v1.2.0 (WIP)
 
+- Added environment var for setting bind address and port. (#11)
+
 - Added endpoint `GET /version` that returns an object of version data of the
   API itself. (#3)
 

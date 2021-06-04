@@ -62,7 +62,15 @@ func main() {
 	r.GET("/import/azuredevops/version", getVersionHandler)
 	r.GET("/import/azuredevops/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	r.Run()
+	r.Run(getBindAddress())
+}
+
+func getBindAddress() string {
+	bindAddress, isBindAddressDefined := os.LookupEnv("BIND_ADDRESS")
+	if !isBindAddressDefined || bindAddress == "" {
+		return "0.0.0.0:8080"
+	}
+	return bindAddress
 }
 
 func pingHandler(c *gin.Context) {
