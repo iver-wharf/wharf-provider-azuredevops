@@ -24,6 +24,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Changed version of Alpine Docker image used as the base image from 3.13.4
   -> 3.13.5. (#12)
+  
+- Changed to return IETF RFC-7807 compatible problem responses on failures 
+  instead of solely JSON-formatted strings. (#14)
 
 ## v1.1.1 (2021-04-09)
 
