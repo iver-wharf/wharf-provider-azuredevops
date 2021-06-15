@@ -1,19 +1,19 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"strconv"
-
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-api-client-go/pkg/wharfapi"
+	"github.com/iver-wharf/wharf-core/pkg/ginutil"
+	"github.com/iver-wharf/wharf-core/pkg/problem"
 	_ "github.com/iver-wharf/wharf-provider-azuredevops/docs"
 )
 
@@ -93,8 +93,8 @@ func runAzureDevOpsHandler(c *gin.Context) {
 	i := importBody{}
 	err := c.BindJSON(&i)
 	if err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, err.Error())
+		ginutil.WriteInvalidBindError(c, err,
+		"One or more parameters failed to parse when reading the request body for branch object to update.")
 		return
 	}
 
@@ -102,7 +102,12 @@ func runAzureDevOpsHandler(c *gin.Context) {
 
 	if i.Group == "" {
 		fmt.Println("Unable to get due to empty group.")
-		c.JSON(http.StatusBadRequest, "Unable to get due to empty group.")
+		ginutil.WriteProblem(c, problem.Response{
+			Type: "prob/provider/azuredevops/empty-group-error",
+			Title: "Empty group error.",
+			Status: http.StatusBadRequest,
+			Detail: "Unable to get due to empty group.",
+		})
 		return
 	}
 
@@ -111,22 +116,37 @@ func runAzureDevOpsHandler(c *gin.Context) {
 		token, err = client.GetTokenById(i.TokenID)
 		if err != nil || token.TokenID == 0 {
 			fmt.Printf("Unable to get token. %+v", err)
-			c.JSON(http.StatusBadRequest, fmt.Sprintf("Unable to get token. %+v", err))
+			ginutil.WriteProblemError(c, err, problem.Response{
+				Type: "prob/provider/azuredevops/getting-token-error",
+				Title: "Error getting token.",
+				Status: http.StatusBadRequest,
+				Detail: "Unable to get token.",
+			})
 			return
 		}
 		i.User = token.UserName
 		i.Token = token.Token
 	} else if i.User == "" {
 		fmt.Println("Unable to get due to empty user.")
-		c.JSON(http.StatusBadRequest, "Unable to get due to empty user.")
+		ginutil.WriteProblem(c, problem.Response{
+			Type: "prob/provider/azuredevops/empty-user-error",
+			Title: "Empty user error.",
+			Status: http.StatusBadRequest,
+			Detail: "Unable to get due to empty user.",
+		})
 		return
 	} else {
 		token, err = client.GetToken(i.Token, i.User)
 		if err != nil || token.TokenID == 0 {
 			token, err = client.PostToken(wharfapi.Token{Token: i.Token, UserName: i.User})
 			if err != nil {
-				fmt.Println("Unable to put token: ", err)
-				c.JSON(http.StatusBadRequest, fmt.Sprintf("Error: %+v", err))
+				fmt.Println("Unable to post token: ", err)
+				ginutil.WriteProblemError(c, err, problem.Response{
+					Type: "prob/provider/azuredevops/posting-token-error",
+					Title: "Error posting token.",
+					Status: http.StatusBadRequest,
+					Detail: "Unable to post token.",
+				})
 				return
 			}
 		}
@@ -138,7 +158,12 @@ func runAzureDevOpsHandler(c *gin.Context) {
 		provider, err = client.GetProviderById(i.ProviderID)
 		if err != nil || provider.ProviderID == 0 {
 			fmt.Printf("Unable to get provider. %+v", err)
-			c.JSON(http.StatusBadRequest, fmt.Sprintf("Unable to get provider. %+v", err))
+			ginutil.WriteProblemError(c, err, problem.Response{
+				Type: "prob/provider/azuredevops/getting-provider-error",
+				Title: "Error getting provider.",
+				Status: http.StatusBadRequest,
+				Detail: "Unable to get provider.",
+			})
 			return
 		}
 		i.URL = provider.URL
@@ -147,8 +172,13 @@ func runAzureDevOpsHandler(c *gin.Context) {
 		if err != nil || provider.ProviderID == 0 {
 			provider, err = client.PostProvider(wharfapi.Provider{Name: "azuredevops", URL: i.URL, TokenID: token.TokenID})
 			if err != nil {
-				fmt.Println("Unable to put provider: ", err)
-				c.JSON(http.StatusBadRequest, fmt.Sprintf("Error: %+v", err))
+				fmt.Println("Unable to post provider: ", err)
+				ginutil.WriteProblemError(c, err, problem.Response{
+					Type: "prob/provider/azuredevops/posting-provider-error",
+					Title: "Error posting provider.",
+					Status: http.StatusBadRequest,
+					Detail: "Unable to post provider.",
+				})
 				return
 			}
 		}
@@ -158,13 +188,23 @@ func runAzureDevOpsHandler(c *gin.Context) {
 	url, err := buildURL(i.URL, i.Group, i.Project)
 	if err != nil {
 		fmt.Println("Unable to build url: ", err)
-		c.JSON(http.StatusBadRequest, fmt.Sprintf("Error: %+v", err))
+		ginutil.WriteProblemError(c, err, problem.Response{
+			Type: "prob/provider/azuredevops/building-url-error",
+			Title: "Error building url.",
+			Status: http.StatusBadRequest,
+			Detail: "Unable to build url.",
+		})
 		return
 	}
 
 	bodyBytes, err := getBodyFromRequest(i.User, i.Token, url)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, fmt.Sprintf("Error: %+v", err))
+		ginutil.WriteProblemError(c, err, problem.Response{
+			Type: "prob/provider/azuredevops/getting-body-error",
+			Title: "Error getting body from request.",
+			Status: http.StatusBadRequest,
+			Detail: "Unable to get body from request.",
+		})
 		return
 	}
 
@@ -182,7 +222,12 @@ func runAzureDevOpsHandler(c *gin.Context) {
 	}
 	if err != nil {
 		fmt.Println("Unable to unmarshal projects: ", err)
-		c.JSON(http.StatusBadRequest, fmt.Sprintf("Error: %+v", err))
+		ginutil.WriteProblemError(c, err, problem.Response{
+			Type: "prob/provider/azuredevops/unmarshal-project-error",
+			Title: "Error unmarshalling project.",
+			Status: http.StatusBadRequest,
+			Detail: "Unable to unmarshal projects.",
+		})
 		return
 	}
 
@@ -190,14 +235,24 @@ func runAzureDevOpsHandler(c *gin.Context) {
 		buildDefinitionStr, err := getAzureDevOpsBuildDefinition(i, project.Name)
 		if err != nil {
 			fmt.Println("Unable to get build definition: ", err)
-			c.JSON(http.StatusBadRequest, fmt.Sprintf("Error: %+v", err))
+			ginutil.WriteProblemError(c, err, problem.Response{
+				Type: "prob/provider/azuredevops/getting-build-definition-error",
+				Title: "Error getting build definition.",
+				Status: http.StatusBadRequest,
+				Detail: "Unable to get build definition.",
+			})
 			return
 		}
 
 		gitURL, err := getGitURL(provider, i.Group, project)
 		if err != nil {
 			fmt.Println("Unable to construct git url ", err)
-			c.JSON(http.StatusBadRequest, fmt.Sprintf("Error: %+v", err))
+			ginutil.WriteProblemError(c, err, problem.Response{
+				Type: "prob/provider/azuredevops/constructing-git-url-error",
+				Title: "Error constructing git url.",
+				Status: http.StatusBadRequest,
+				Detail: "Unable to construct git url.",
+			})
 			return
 		}
 
@@ -213,7 +268,12 @@ func runAzureDevOpsHandler(c *gin.Context) {
 
 		if err != nil {
 			fmt.Println("Unable to put project: ", err)
-			c.JSON(http.StatusBadRequest, fmt.Sprintf("Error: %+v", err))
+			ginutil.WriteProblemError(c, err, problem.Response{
+				Type: "prob/provider/azuredevops/putting-project-error",
+				Title: "Error putting project.",
+				Status: http.StatusBadRequest,
+				Detail: "Unable to put project.",
+			})
 			return
 		}
 
@@ -259,7 +319,12 @@ func runAzureDevOpsHandler(c *gin.Context) {
 				})
 			if err != nil {
 				fmt.Println("Unable to put branch: ", err)
-				c.JSON(http.StatusBadRequest, fmt.Sprintf("Error: %+v", err))
+				ginutil.WriteProblemError(c, err, problem.Response{
+					Type: "prob/provider/azuredevops/putting-branch-error",
+					Title: "Error putting branch.",
+					Status: http.StatusBadRequest,
+					Detail: "Unable to put branch.",
+				})
 				break
 			}
 		}
@@ -284,26 +349,31 @@ func prCreatedTriggerHandler(c *gin.Context) {
 
 	t := azureDevOpsPR{}
 	if err := c.BindJSON(&t); err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, err.Error())
+		ginutil.WriteInvalidBindError(c, err,
+			"One or more parameters failed to parse when reading the request body for pull request.")
 		return
 	}
 
 	if t.EventType != "git.pullrequest.created" {
-		c.JSON(
-			http.StatusBadRequest,
-			fmt.Sprintf("Expected git.pullrequest.created trigger, got: %s instead.", t.EventType))
+		err := fmt.Errorf("expected git.pullrequest.created trigger, got: %s", t.EventType)
+		ginutil.WriteProblemError(c, err, problem.Response{
+			Type: "prob/provider/azuredevops/invalid-event-type-error",
+			Title: "Invalid event type.",
+			Status: http.StatusBadRequest,
+			Detail: "Invalid event type.",
+		})
 		return
 	}
 
-	projectID, err := strconv.ParseUint(c.Param("projectid"), 10, 32)
-	if err != nil {
-		c.Error(err)
-		c.JSON(http.StatusBadRequest, fmt.Sprintf("Could not get projectid from query string %s", err))
+	projectID, ok := ginutil.ParseParamUint(c, "projectid")
+	if !ok {
 		return
 	}
 
-	environment := c.Query("environment")
+	environment, ok := ginutil.RequireQueryString(c, "environment")
+	if !ok {
+		return
+	}
 
 	client := wharfapi.Client{
 		ApiUrl:     os.Getenv("WHARF_API_URL"),
@@ -311,7 +381,7 @@ func prCreatedTriggerHandler(c *gin.Context) {
 	}
 
 	var resp wharfapi.ProjectRunResponse
-	resp, err2 := client.PostProjectRun(
+	resp, err := client.PostProjectRun(
 		wharfapi.ProjectRun{
 			ProjectID:   uint(projectID),
 			Stage:       "prcreatedd",
@@ -320,9 +390,14 @@ func prCreatedTriggerHandler(c *gin.Context) {
 		},
 	)
 
-	if err2 != nil {
-		fmt.Println("Unable to send trigger to wharf-client: ", err2)
-		c.JSON(http.StatusBadRequest, fmt.Sprintf("Unable to send trigger to wharf-client, error: %v", err2))
+	if err != nil {
+		err = fmt.Errorf("unable to send trigger to wharf-client: %v", err)
+		ginutil.WriteProblemError(c, err, problem.Response{
+			Type: "prob/provider/azuredevops/send-trigger-error",
+			Title: "Error sending trigger.",
+			Status: http.StatusBadRequest,
+			Detail: "Unable to send trigger to wharf-client.",
+		})
 		return
 	}
 
