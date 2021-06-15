@@ -94,7 +94,7 @@ func runAzureDevOpsHandler(c *gin.Context) {
 	err := c.BindJSON(&i)
 	if err != nil {
 		ginutil.WriteInvalidBindError(c, err,
-		"One or more parameters failed to parse when reading the request body for branch object to update.")
+			"One or more parameters failed to parse when reading the request body for branch object to update.")
 		return
 	}
 
