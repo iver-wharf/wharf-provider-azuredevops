@@ -391,6 +391,7 @@ func prCreatedTriggerHandler(c *gin.Context) {
 	)
 
 	if err != nil {
+		fmt.Println("Unable to send trigger to wharf-client: ", err)
 		err = fmt.Errorf("unable to send trigger to wharf-client: %v", err)
 		ginutil.WriteProblemError(c, err, problem.Response{
 			Type: "prob/provider/azuredevops/send-trigger-error",
