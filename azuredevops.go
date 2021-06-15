@@ -341,8 +341,8 @@ func runAzureDevOpsHandler(c *gin.Context) {
 // @Param azureDevOpsPR body azureDevOpsPR _ "AzureDevOps PR "
 // @Param environment query string true "wharf build environment"
 // @Success 200 {object} wharfapi.ProjectRunResponse "OK"
-// @Failure 400 {object} string "Bad request"
-// @Failure 401 {object} string "Unauthorized or missing jwt token"
+// @Failure 400 {object} problem.Response "Bad request"
+// @Failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @Router /azuredevops/triggers/{projectid}/pr/created [post]
 func prCreatedTriggerHandler(c *gin.Context) {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
