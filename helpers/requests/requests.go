@@ -8,6 +8,8 @@ import (
 	"net/url"
 )
 
+// ConstructGetURL Constructs a URL to use in a GET request.
+// Queries are passed as a map of string arrays
 func ConstructGetURL(
 	rawURL string, queries map[string][]string, format string, values ...interface{}) (*url.URL, error) {
 
@@ -24,6 +26,8 @@ func ConstructGetURL(
 	return urlPath, nil
 }
 
+// GetAndParseJSON Makes a request to urlPath with basic auth using user and token.
+//	Attempts to parse the JSON response, returning it in "result" if successful.
 func GetAndParseJSON(result interface{}, user, token string, urlPath *url.URL) error {
 	body, err := getBodyFromRequest(user, token, urlPath.String())
 	if err != nil {
@@ -39,6 +43,8 @@ func GetAndParseJSON(result interface{}, user, token string, urlPath *url.URL) e
 	return nil
 }
 
+// GetAsString Makes a request to urlPath with basic auth using user and token.
+// Returns the response as a string
 func GetAsString(user, token string, urlPath *url.URL) (string, error) {
 	body, err := getBodyFromRequest(user, token, urlPath.String())
 	if err != nil {

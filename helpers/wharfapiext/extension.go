@@ -15,10 +15,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// ExtClient Extension of the wharfapi.Client
 type ExtClient struct {
 	*wharfapi.Client
 }
 
+// CreateOrUpdate Convenience function to POST or PUT data to a Wharf endpoint.
 func (c ExtClient) CreateOrUpdate(data interface{}, method, dataName, endpoint string) (interface{}, error) {
 	var newData = reflect.New(reflect.TypeOf(data)).Elem().Interface()
 	body, err := json.Marshal(data)
@@ -42,6 +44,7 @@ func (c ExtClient) CreateOrUpdate(data interface{}, method, dataName, endpoint s
 	return newData, nil
 }
 
+// PostBranch Posts a branch to Wharf.
 func (c ExtClient) PostBranch(branch wharfapi.Branch) (wharfapi.Branch, error) {
 	data, err := c.CreateOrUpdate(branch, http.MethodPost, "BRANCH", "/branch")
 	if err != nil {
@@ -51,6 +54,7 @@ func (c ExtClient) PostBranch(branch wharfapi.Branch) (wharfapi.Branch, error) {
 	return data.(wharfapi.Branch), nil
 }
 
+// PutBranches Puts several branches to Wharf.
 func (c ExtClient) PutBranches(branch []wharfapi.Branch) ([]wharfapi.Branch, error) {
 	data, err := c.CreateOrUpdate(branch, http.MethodPut, "BRANCHES", "/branches")
 	if err != nil {
@@ -60,6 +64,7 @@ func (c ExtClient) PutBranches(branch []wharfapi.Branch) ([]wharfapi.Branch, err
 	return data.([]wharfapi.Branch), nil
 }
 
+// PostToken Posts a token to Wharf.
 func (c ExtClient) PostToken(token wharfapi.Token) (wharfapi.Token, error) {
 	data, err := c.CreateOrUpdate(token, http.MethodPost, "TOKEN", "/token")
 	if err != nil {
@@ -69,6 +74,7 @@ func (c ExtClient) PostToken(token wharfapi.Token) (wharfapi.Token, error) {
 	return data.(wharfapi.Token), nil
 }
 
+// PutProject Puts a project to Wharf.
 func (c ExtClient) PutProject(project wharfapi.Project) (wharfapi.Project, error) {
 	data, err := c.CreateOrUpdate(project, http.MethodPut, "PROJECT", "/project")
 	if err != nil {
