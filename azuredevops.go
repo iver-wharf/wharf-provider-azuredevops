@@ -399,10 +399,8 @@ func getRepositoriesWritesError(c *gin.Context, i importBody, project azureDevOp
 	err = requests.GetAndParseJSON(&repositories, i.User, i.Token, urlPath)
 	if err != nil {
 		fmt.Println("Unable to get project repository: ", err)
-		ginutilext.WriteAPIReadError(c, err,
-			fmt.Sprintf("Unable to fetch project repository from project '%s'.\nurl: %q",
-				project.Name,
-				urlPath.String()))
+		ginutilext.WriteResponseFormatError(c, err, "Could be caused by invalid JSON data structure." +
+			"\nMight be the result of an incompatible version of Azure DevOps.")
 		return azureDevOpsRepositorySlice{}, err
 	}
 
@@ -533,8 +531,8 @@ func getProjectBranchesWritesError(c *gin.Context, i importBody, project string)
 
 	err = requests.GetAndParseJSON(&projectRefs, i.User, i.Token, urlPath)
 	if err != nil {
-		ginutilext.WriteAPIReadError(c, err,
-			fmt.Sprintf("Unable to get or parse JSON response from Azure DevOps API: %q.\n", urlPath.String()))
+		ginutilext.WriteResponseFormatError(c, err, "Could be caused by invalid JSON data structure." +
+			"\nMight be the result of an incompatible version of Azure DevOps.")
 		return []azureDevOpsBranch{}, err
 	}
 
