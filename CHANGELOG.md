@@ -22,8 +22,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Added Swagger spec metadata such as version that equals the version of the
   API, contact information, and license. (#3)
 
-- Changed version of Alpine Docker image used as the base image from 3.13.4
-  -> 3.13.5. (#12)
+- Changed version of Docker base images:
+
+  - Alpine: 3.13.4 -> 3.14.0 (#12, #15)
+  - Golang: 1.16.4 -> 1.16.5 (#15)
 
 ## v1.1.1 (2021-04-09)
 
