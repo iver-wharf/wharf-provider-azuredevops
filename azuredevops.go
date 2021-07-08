@@ -15,14 +15,11 @@ import (
 	_ "github.com/iver-wharf/wharf-provider-azuredevops/docs"
 	"github.com/iver-wharf/wharf-provider-azuredevops/helpers/ginutilext"
 	"github.com/iver-wharf/wharf-provider-azuredevops/helpers/requests"
-	"github.com/iver-wharf/wharf-provider-azuredevops/helpers/wharfapiext"
 )
 
 const apiRepositories string = "_apis/git/repositories"
 const apiProjects string = "_apis/projects"
 const apiProviderName string = "azuredevops"
-const apiVersion string = "5.0"
-const eventTypePullRequest string = "git.pullrequest.created"
 const itemsPath string = "items"
 const refsPath string = "refs"
 
@@ -52,7 +49,7 @@ type azureDevOpsProject struct {
 	Visibility  string `json:"visibility"`
 }
 
-type azureDevOpsProjectSlice struct {
+type azureDevOpsProjectResponse struct {
 	Count int `json:"count"`
 	Value []azureDevOpsProject `json:"value"`
 }
@@ -68,7 +65,7 @@ type azureDevOpsRepository struct {
 	SSHURL        string             `json:"sshUrl"`
 }
 
-type azureDevOpsRepositorySlice struct {
+type azureDevOpsRepositoryResponse struct {
 	Count int `json:"count"`
 	Value []azureDevOpsRepository `json:"value"`
 }
@@ -100,10 +97,10 @@ type azureDevOpsPR struct {
 func runAzureDevOpsHandler(c *gin.Context) {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	client := wharfapiext.ExtClient{Client: &wharfapi.Client{
+	client := wharfapi.Client{
 		ApiUrl:     os.Getenv("WHARF_API_URL"),
 		AuthHeader: c.GetHeader("Authorization"),
-	}}
+	}
 
 	i, err := bindImportDetails(c)
 	if err != nil {
@@ -140,13 +137,13 @@ func runAzureDevOpsHandler(c *gin.Context) {
 	}
 
 	for _, project := range projects.Value {
-		projectInDb, err := tryPutProjectWritesError(c, client, provider, i, project)
+		projectInDb, err := putProjectWritesError(c, client, provider, i, project)
 		if err != nil {
 			fmt.Printf("Unable to import project %q", project.Name)
 			return
 		}
 
-		err = tryPostBranchesWritesError(c, client, i, project, projectInDb)
+		err = postBranchesWritesError(c, client, i, project, projectInDb)
 		if err != nil {
 			fmt.Printf("An error occured when importing branches from %q", project.Name)
 			return
@@ -168,6 +165,8 @@ func runAzureDevOpsHandler(c *gin.Context) {
 // @Failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @Router /azuredevops/triggers/{projectid}/pr/created [post]
 func prCreatedTriggerHandler(c *gin.Context) {
+	const eventTypePullRequest string = "git.pullrequest.created"
+
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	t := azureDevOpsPR{}
@@ -234,8 +233,7 @@ func bindImportDetails(c *gin.Context) (importBody, error) {
 	return i, nil
 }
 
-// tryPutProjectWritesError Writes an error to the gin Context when an error occurs!
-func tryPutProjectWritesError(c *gin.Context, client wharfapiext.ExtClient, provider wharfapi.Provider,
+func putProjectWritesError(c *gin.Context, client wharfapi.Client, provider wharfapi.Provider,
 	i importBody, project azureDevOpsProject) (wharfapi.Project, error) {
 	buildDefinitionStr, err := getBuildDefinitionWritesError(c, i, project.Name)
 	if err != nil {
@@ -271,8 +269,7 @@ func tryPutProjectWritesError(c *gin.Context, client wharfapiext.ExtClient, prov
 	return projectInDb, nil
 }
 
-// tryPostBranchesWritesError Writes an error to the gin Context when an error occurs!
-func tryPostBranchesWritesError(c *gin.Context, client wharfapiext.ExtClient, i importBody,
+func postBranchesWritesError(c *gin.Context, client wharfapi.Client, i importBody,
 	project azureDevOpsProject, projectInDb wharfapi.Project) error {
 	repositories, err := getRepositoriesWritesError(c, i, project)
 	if err != nil {
@@ -287,7 +284,7 @@ func tryPostBranchesWritesError(c *gin.Context, client wharfapiext.ExtClient, i 
 	}
 
 	for _, branch := range projectBranches {
-		_, err := client.PostBranch(wharfapi.Branch{
+		_, err := client.PutBranch(wharfapi.Branch{
 			Name:      branch.Name,
 			ProjectID: projectInDb.ProjectID,
 			Default:   branch.Ref == repositories.Value[0].DefaultBranch,
@@ -304,7 +301,7 @@ func tryPostBranchesWritesError(c *gin.Context, client wharfapiext.ExtClient, i 
 }
 
 // getTokenByIDWritesError Writes an error to the gin Context when an error occurs!
-func getTokenByIDWritesError(c *gin.Context, client wharfapiext.ExtClient, tokenID uint) (wharfapi.Token, error) {
+func getTokenByIDWritesError(c *gin.Context, client wharfapi.Client, tokenID uint) (wharfapi.Token, error) {
 	token, err := client.GetTokenById(tokenID)
 	if err != nil || token.TokenID == 0 {
 		fmt.Printf("Unable to get token. %+v", err)
@@ -317,7 +314,7 @@ func getTokenByIDWritesError(c *gin.Context, client wharfapiext.ExtClient, token
 }
 
 // getOrPostTokenWritesError Writes an error to the gin Context when an error occurs!
-func getOrPostTokenWritesError(c *gin.Context, client wharfapiext.ExtClient, i importBody) (wharfapi.Token, error) {
+func getOrPostTokenWritesError(c *gin.Context, client wharfapi.Client, i importBody) (wharfapi.Token, error) {
 	var err error
 	if i.User == "" && i.TokenID == 0 {
 		err = fmt.Errorf("both token and user were omitted")
@@ -353,7 +350,7 @@ func getOrPostTokenWritesError(c *gin.Context, client wharfapiext.ExtClient, i i
 }
 
 // getOrPostProviderWritesError Writes an error to the gin Context when an error occurs!
-func getOrPostProviderWritesError(c *gin.Context, client wharfapiext.ExtClient,
+func getOrPostProviderWritesError(c *gin.Context, client wharfapi.Client,
 	token wharfapi.Token, i importBody) (wharfapi.Provider, error) {
 	var provider wharfapi.Provider
 	if i.ProviderID != 0 {
@@ -382,26 +379,27 @@ func getOrPostProviderWritesError(c *gin.Context, client wharfapiext.ExtClient,
 	return provider, nil
 }
 
-// getRepositoriesWritesError Writes an error to the gin Context when an error occurs!
-func getRepositoriesWritesError(c *gin.Context, i importBody, project azureDevOpsProject) (azureDevOpsRepositorySlice, error) {
+func getRepositoriesWritesError(c *gin.Context, i importBody, project azureDevOpsProject) (azureDevOpsRepositoryResponse, error) {
+	const apiVersion string = "5.0"
+
 	urlPath, err := requests.ConstructGetURL(i.URL, map[string][]string{
 		"api-version": {apiVersion},
 	}, "%v/%v/%v", i.Group, project.Name, apiRepositories)
 	if err != nil {
 		fmt.Println("Unable to get url: ", err)
 		ginutil.WriteInvalidParamError(c, err, "URL", fmt.Sprintf("Unable to parse URL %q", i.URL))
-		return azureDevOpsRepositorySlice{}, err
+		return azureDevOpsRepositoryResponse{}, err
 	}
 
 	fmt.Println(urlPath.String())
 
-	repositories := azureDevOpsRepositorySlice{}
+	repositories := azureDevOpsRepositoryResponse{}
 	err = requests.GetAndParseJSON(&repositories, i.User, i.Token, urlPath)
 	if err != nil {
 		fmt.Println("Unable to get project repository: ", err)
 		ginutilext.WriteResponseFormatError(c, err, "Could be caused by invalid JSON data structure." +
 			"\nMight be the result of an incompatible version of Azure DevOps.")
-		return azureDevOpsRepositorySlice{}, err
+		return azureDevOpsRepositoryResponse{}, err
 	}
 
 	if repositories.Count != 1 {
@@ -409,7 +407,7 @@ func getRepositoriesWritesError(c *gin.Context, i importBody, project azureDevOp
 		ginutilext.WriteAPIReadError(c, err,
 			fmt.Sprintf("There were %v repositories, we need it to be 1.",
 				repositories.Count))
-		return azureDevOpsRepositorySlice{}, fmt.Errorf("one repository is required")
+		return azureDevOpsRepositoryResponse{}, fmt.Errorf("one repository is required")
 	}
 
 	if repositories.Value[0].Project.ID != project.ID {
@@ -418,13 +416,12 @@ func getRepositoriesWritesError(c *gin.Context, i importBody, project azureDevOp
 			fmt.Sprintf("Repository id (%v) and project id (%v) mismatch",
 				repositories.Value[0].Project.ID,
 				project.ID))
-		return azureDevOpsRepositorySlice{}, fmt.Errorf("repository is not connected with project")
+		return azureDevOpsRepositoryResponse{}, fmt.Errorf("repository is not connected with project")
 	}
 
 	return repositories, nil
 }
 
-// getBuildDefinitionWritesError Writes an error to the gin Context when an error occurs!
 func getBuildDefinitionWritesError(c *gin.Context, i importBody, projectName string) (string, error) {
 	urlPath, err := requests.ConstructGetURL(i.URL, map[string][]string{
 		"scopePath": {fmt.Sprintf("/%v", buildDefinitionFileName)},
@@ -458,8 +455,7 @@ func getGitURL(provider wharfapi.Provider, group string, project azureDevOpsProj
 	return gitURL, nil
 }
 
-// getProjectsWritesError Writes an error to the gin Context when an error occurs!
-func getProjectsWritesError(c *gin.Context, i importBody) (azureDevOpsProjectSlice, error) {
+func getProjectsWritesError(c *gin.Context, i importBody) (azureDevOpsProjectResponse, error) {
 	var getProjectsURL *url.URL
 	var format string
 	var values []interface{}
@@ -471,6 +467,7 @@ func getProjectsWritesError(c *gin.Context, i importBody) (azureDevOpsProjectSli
 		values = []interface{}{ i.Group, apiProjects }
 	}
 
+	const apiVersion string = "5.0"
 	getProjectsURL, err := requests.ConstructGetURL(i.URL, map[string][]string{
 		"api-version": {apiVersion},
 	}, format, values...)
@@ -487,10 +484,10 @@ func getProjectsWritesError(c *gin.Context, i importBody) (azureDevOpsProjectSli
 		}
 
 		ginutil.WriteInvalidParamError(c, err, "URL", errorDetail)
-		return azureDevOpsProjectSlice{}, err
+		return azureDevOpsProjectResponse{}, err
 	}
 
-	projects := azureDevOpsProjectSlice{
+	projects := azureDevOpsProjectResponse{
 		Count: 1,
 		Value: make([]azureDevOpsProject, 1),
 	}
@@ -504,14 +501,15 @@ func getProjectsWritesError(c *gin.Context, i importBody) (azureDevOpsProjectSli
 	if err != nil {
 		ginutilext.WriteResponseFormatError(c, err, "Could be caused by invalid JSON data structure." +
 			"\nMight be the result of an incompatible version of Azure DevOps.")
-		return azureDevOpsProjectSlice{}, err
+		return azureDevOpsProjectResponse{}, err
 	}
 
 	return projects, nil
 }
 
-// getProjectBranchesWritesError Writes an error to the gin Context when an error occurs!
 func getProjectBranchesWritesError(c *gin.Context, i importBody, project string) ([]azureDevOpsBranch, error) {
+	const apiVersion string = "5.0"
+
 	urlPath, err := requests.ConstructGetURL(i.URL, map[string][]string{
 		"api-version": {apiVersion},
 		"filter": {"heads/"},
