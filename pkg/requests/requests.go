@@ -26,10 +26,10 @@ func ConstructGetURL(
 	return urlPath, nil
 }
 
-// GetAndParseJSON Makes a request to urlPath with basic auth using user and token.
-//	Attempts to parse the JSON response, returning it in "result" if successful.
+// GetAndParseJSON invokes a HTTP request with basic auth.
+// On success the response body will be unmarshalled as JSON.
 func GetAndParseJSON(result interface{}, user, token string, urlPath *url.URL) error {
-	body, err := getBodyFromRequest(user, token, urlPath.String())
+	body, err := getBodyFromRequest(user, token, urlPath)
 	if err != nil {
 		return err
 	}
@@ -43,10 +43,10 @@ func GetAndParseJSON(result interface{}, user, token string, urlPath *url.URL) e
 	return nil
 }
 
-// GetAsString Makes a request to urlPath with basic auth using user and token.
-// Returns the response as a string
+// GetAsString invokes a HTTP request with basic auth.
+// Returns the response as a string.
 func GetAsString(user, token string, urlPath *url.URL) (string, error) {
-	body, err := getBodyFromRequest(user, token, urlPath.String())
+	body, err := getBodyFromRequest(user, token, urlPath)
 	if err != nil {
 		return "", err
 	}
@@ -54,7 +54,8 @@ func GetAsString(user, token string, urlPath *url.URL) (string, error) {
 	return string(body), nil
 }
 
-func getBodyFromRequest(user string, token string, url string) ([]byte, error) {
+func getBodyFromRequest(user string, token string, urlPath *url.URL) ([]byte, error) {
+	url := urlPath.String()
 	fmt.Println("attempting to get from: ", url)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {

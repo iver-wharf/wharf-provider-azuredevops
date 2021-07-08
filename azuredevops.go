@@ -13,8 +13,8 @@ import (
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	_ "github.com/iver-wharf/wharf-provider-azuredevops/docs"
-	"github.com/iver-wharf/wharf-provider-azuredevops/helpers/ginutilext"
-	"github.com/iver-wharf/wharf-provider-azuredevops/helpers/requests"
+	"github.com/iver-wharf/wharf-provider-azuredevops/pkg/ginutilext"
+	"github.com/iver-wharf/wharf-provider-azuredevops/pkg/requests"
 )
 
 const apiRepositories string = "_apis/git/repositories"
