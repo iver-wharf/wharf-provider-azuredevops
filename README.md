@@ -19,7 +19,7 @@ dev.azure.com is not well tested.
 
 ## Development
 
-1. Install Go 1.13 or later: <https://golang.org/>
+1. Install Go 1.16 or later: <https://golang.org/>
 
 2. Install the [swaggo/swag](https://github.com/swaggo/swag) CLI globally:
 
