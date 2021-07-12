@@ -12,9 +12,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
-## v1.2.0 (WIP)
+## v1.2.0 (2021-07-12)
 
-- Added environment var for setting bind address and port. (#11)
+- Added environment variable `BIND_ADDRESS` for setting bind address and port,
+  which defaults to `0.0.0.0:8080` when left unset. (#11)
 
 - Added endpoint `GET /version` that returns an object of version data of the
   API itself. (#3)
