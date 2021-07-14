@@ -13,7 +13,6 @@ import (
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	_ "github.com/iver-wharf/wharf-provider-azuredevops/docs"
-	"github.com/iver-wharf/wharf-provider-azuredevops/pkg/ginutilext"
 	"github.com/iver-wharf/wharf-provider-azuredevops/pkg/requests"
 )
 
@@ -216,7 +215,7 @@ func prCreatedTriggerHandler(c *gin.Context) {
 	if err != nil {
 		fmt.Println("Unable to send trigger to wharf-client: ", err)
 		err = fmt.Errorf("unable to send trigger to wharf-client: %v", err)
-		ginutilext.WriteTriggerError(c, err, "Unable to send trigger to Wharf client.")
+		ginutil.WriteTriggerError(c, err, "Unable to send trigger to Wharf client.")
 		return
 	}
 
@@ -243,7 +242,7 @@ func putProjectWritesError(c *gin.Context, client wharfapi.Client, provider whar
 	gitURL, err := getGitURL(provider, i.Group, project)
 	if err != nil {
 		fmt.Println("Unable to construct git url ", err)
-		ginutilext.WriteComposingProviderDataError(c, err,
+		ginutil.WriteComposingProviderDataError(c, err,
 			fmt.Sprintf("Unable to construct git url for project '%s' in group '%s'", project.Name, i.Group))
 		return wharfapi.Project{}, err
 	}
@@ -260,7 +259,7 @@ func putProjectWritesError(c *gin.Context, client wharfapi.Client, provider whar
 
 	if err != nil {
 		fmt.Println("Unable to put project: ", err)
-		ginutilext.WriteAPIWriteError(c, err,
+		ginutil.WriteAPIClientWriteError(c, err,
 			fmt.Sprintf("Unable to import project '%s' from group '%s' at url '%s'.",
 				i.Project, i.Group, gitURL))
 		return wharfapi.Project{}, err
@@ -292,7 +291,7 @@ func postBranchesWritesError(c *gin.Context, client wharfapi.Client, i importBod
 		})
 		if err != nil {
 			fmt.Println("Unable to post branch: ", err)
-			ginutilext.WriteAPIWriteError(c, err, fmt.Sprintf("Unable to import branch '%s'", branch.Name))
+			ginutil.WriteAPIClientWriteError(c, err, fmt.Sprintf("Unable to import branch '%s'", branch.Name))
 			return err
 		}
 	}
@@ -305,7 +304,7 @@ func getTokenByIDWritesError(c *gin.Context, client wharfapi.Client, tokenID uin
 	token, err := client.GetTokenById(tokenID)
 	if err != nil || token.TokenID == 0 {
 		fmt.Printf("Unable to get token. %+v", err)
-		ginutilext.WriteAPIReadError(c, err,
+		ginutil.WriteAPIClientReadError(c, err,
 			fmt.Sprintf("Unable to get token by id %v.", tokenID))
 		return wharfapi.Token{}, err
 	}
@@ -327,7 +326,7 @@ func getOrPostTokenWritesError(c *gin.Context, client wharfapi.Client, i importB
 	if i.TokenID != 0 {
 		token, err = getTokenByIDWritesError(c, client, i.TokenID)
 		if err != nil {
-			ginutilext.WriteAPIReadError(c, err,
+			ginutil.WriteAPIClientReadError(c, err,
 				fmt.Sprintf("Unable to get token by id %v.", i.TokenID))
 			return wharfapi.Token{}, err
 		}
@@ -337,7 +336,7 @@ func getOrPostTokenWritesError(c *gin.Context, client wharfapi.Client, i importB
 			token, err = client.PostToken(wharfapi.Token{Token: i.Token, UserName: i.User})
 			if err != nil {
 				fmt.Println("Unable to post token: ", err)
-				ginutilext.WriteAPIWriteError(c, err,"Unable to get existing token or create new token.")
+				ginutil.WriteAPIClientWriteError(c, err,"Unable to get existing token or create new token.")
 				return wharfapi.Token{}, err
 			}
 		}
@@ -357,7 +356,7 @@ func getOrPostProviderWritesError(c *gin.Context, client wharfapi.Client,
 		provider, err := client.GetProviderById(i.ProviderID)
 		if err != nil || provider.ProviderID == 0 {
 			fmt.Printf("Unable to get provider. %+v", err)
-			ginutilext.WriteAPIReadError(c, err,
+			ginutil.WriteAPIClientReadError(c, err,
 				fmt.Sprintf("Unable to get provider by id %v", i.ProviderID))
 			return wharfapi.Provider{}, err
 		}
@@ -368,7 +367,7 @@ func getOrPostProviderWritesError(c *gin.Context, client wharfapi.Client,
 				wharfapi.Provider{Name: apiProviderName, URL: i.URL, TokenID: token.TokenID})
 			if err != nil {
 				fmt.Println("Unable to post provider: ", err)
-				ginutilext.WriteAPIWriteError(c, err,
+				ginutil.WriteAPIClientWriteError(c, err,
 					fmt.Sprintf("Unable to get or create provider from '%s'.", i.URL))
 				return wharfapi.Provider{}, err
 			}
@@ -397,14 +396,14 @@ func getRepositoriesWritesError(c *gin.Context, i importBody, project azureDevOp
 	err = requests.GetAndParseJSON(&repositories, i.User, i.Token, urlPath)
 	if err != nil {
 		fmt.Println("Unable to get project repository: ", err)
-		ginutilext.WriteResponseFormatError(c, err, "Could be caused by invalid JSON data structure." +
+		ginutil.WriteProviderResponseError(c, err, "Could be caused by invalid JSON data structure." +
 			"\nMight be the result of an incompatible version of Azure DevOps.")
 		return azureDevOpsRepositoryResponse{}, err
 	}
 
 	if repositories.Count != 1 {
 		fmt.Println("One repository is required.")
-		ginutilext.WriteAPIReadError(c, err,
+		ginutil.WriteAPIClientReadError(c, err,
 			fmt.Sprintf("There were %v repositories, we need it to be 1.",
 				repositories.Count))
 		return azureDevOpsRepositoryResponse{}, fmt.Errorf("one repository is required")
@@ -412,7 +411,7 @@ func getRepositoriesWritesError(c *gin.Context, i importBody, project azureDevOp
 
 	if repositories.Value[0].Project.ID != project.ID {
 		fmt.Println("Repository is not connected with project.")
-		ginutilext.WriteAPIReadError(c, err,
+		ginutil.WriteAPIClientReadError(c, err,
 			fmt.Sprintf("Repository id (%v) and project id (%v) mismatch",
 				repositories.Value[0].Project.ID,
 				project.ID))
@@ -425,7 +424,7 @@ func getRepositoriesWritesError(c *gin.Context, i importBody, project azureDevOp
 func getBuildDefinitionWritesError(c *gin.Context, i importBody, projectName string) (string, error) {
 	urlPath, err := requests.ConstructGetURL(i.URL, map[string][]string{
 		"scopePath": {fmt.Sprintf("/%v", buildDefinitionFileName)},
-	}, "%v/%v/%v/%v/%v", i.Group, i.Project, apiRepositories, projectName, itemsPath)
+	}, "%s/%s/%s/%s/%s", i.Group, i.Project, apiRepositories, projectName, itemsPath)
 	if err != nil {
 		fmt.Println("Unable to get url: ", err)
 		ginutil.WriteInvalidParamError(c, err, "URL", fmt.Sprintf("Unable to parse URL %q", i.URL))
@@ -435,7 +434,7 @@ func getBuildDefinitionWritesError(c *gin.Context, i importBody, projectName str
 	buildDefinitionStr, err := requests.GetAsString(i.User, i.Token, urlPath)
 	if err != nil {
 		fmt.Println("Unable to get build definition: ", err)
-		ginutilext.WriteFetchBuildDefinitionError(c, err,
+		ginutil.WriteFetchBuildDefinitionError(c, err,
 			fmt.Sprintf("Unable to fetch build definition for '%s'", i.Project))
 		return "", err
 	}
@@ -451,7 +450,8 @@ func getGitURL(provider wharfapi.Provider, group string, project azureDevOpsProj
 		return "", err
 	}
 
-	gitURL := fmt.Sprintf("git@%v:22/%v/%v/_git/%v", providerURL.Host, group, project.Name, project.Name)
+	const sshPort = 22
+	gitURL := fmt.Sprintf("git@%s:%d/%s/%s/_git/%s", providerURL.Host, sshPort, group, project.Name, project.Name)
 	return gitURL, nil
 }
 
@@ -499,7 +499,7 @@ func getProjectsWritesError(c *gin.Context, i importBody) (azureDevOpsProjectRes
 	}
 
 	if err != nil {
-		ginutilext.WriteResponseFormatError(c, err, "Could be caused by invalid JSON data structure." +
+		ginutil.WriteProviderResponseError(c, err, "Could be caused by invalid JSON data structure." +
 			"\nMight be the result of an incompatible version of Azure DevOps.")
 		return azureDevOpsProjectResponse{}, err
 	}
@@ -529,7 +529,7 @@ func getProjectBranchesWritesError(c *gin.Context, i importBody, project string)
 
 	err = requests.GetAndParseJSON(&projectRefs, i.User, i.Token, urlPath)
 	if err != nil {
-		ginutilext.WriteResponseFormatError(c, err, "Could be caused by invalid JSON data structure." +
+		ginutil.WriteProviderResponseError(c, err, "Could be caused by invalid JSON data structure." +
 			"\nMight be the result of an incompatible version of Azure DevOps.")
 		return []azureDevOpsBranch{}, err
 	}
