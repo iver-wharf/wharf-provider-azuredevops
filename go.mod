@@ -7,7 +7,7 @@ require (
 	github.com/gin-contrib/cors v1.3.0
 	github.com/gin-gonic/gin v1.7.1
 	github.com/iver-wharf/wharf-api-client-go v1.2.0
-	github.com/iver-wharf/wharf-core v0.0.0-20210610091057-c2f9a20c6a64
+	github.com/iver-wharf/wharf-core v1.0.0
 	github.com/sirupsen/logrus v1.7.0
 	github.com/swaggo/files v0.0.0-20190704085106-630677cd5c14
 	github.com/swaggo/gin-swagger v1.2.0
