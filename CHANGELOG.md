@@ -12,29 +12,25 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
-## v1.2.0 (2021-07-12)
-
-- Added environment variable `BIND_ADDRESS` for setting bind address and port,
-  which defaults to `0.0.0.0:8080` when left unset. (#11)
-
-- Added endpoint `GET /version` that returns an object of version data of the
-  API itself. (#3)
-
-- Added Swagger spec metadata such as version that equals the version of the
-  API, contact information, and license. (#3)
-
-- Changed version of Alpine Docker image used as the base image from 3.13.4
-  -> 3.13.5. (#12)
-
-- Changed module Go version from v1.13 to v1.16. (#3)
-
-- Changed version of Docker base images:
-
-  - Alpine: 3.13.4 -> 3.14.0 (#12, #15)
-  - Golang: 1.16.4 -> 1.16.5 (#15)
+## v1.3.0 (WIP)
 
 - Changed to return IETF RFC-7807 compatible problem responses on failures
   instead of solely JSON-formatted strings. (#14)
+
+## v1.2.0 (2021-07-12)
+
+- Added environment var for setting bind address and port. (#11)
+
+- Added endpoint `GET /version` that returns an object of version data of the
+  API itself. (#4)
+
+- Added Swagger spec metadata such as version that equals the version of the
+  API, contact information, and license. (#4)
+
+- Changed version of Docker base images:
+
+  - Alpine: 3.13.4 -> 3.14.0 (#13, #17)
+  - Golang: 1.16.4 -> 1.16.5 (#17)
 
 ## v1.1.1 (2021-04-09)
 
