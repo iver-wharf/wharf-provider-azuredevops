@@ -373,10 +373,8 @@ func getOrPostProviderWritesProblem(c *gin.Context, client wharfapi.Client,
 }
 
 func getRepositoriesWritesProblem(c *gin.Context, i importBody, project azureDevOpsProject) (azureDevOpsRepositoryResponse, bool) {
-	const apiVersion string = "5.0"
-
 	urlPath, err := requests.ConstructGetURL(i.URL, map[string][]string{
-		"api-version": {apiVersion},
+		"api-version": {"5.0"},
 	}, "%v/%v/%v", i.Group, project.Name, apiRepositories)
 	if err != nil {
 		fmt.Println("Unable to get url: ", err)
@@ -408,7 +406,7 @@ func getRepositoriesWritesProblem(c *gin.Context, i importBody, project azureDev
 		fmt.Println("Repository is not connected with project.")
 		err = errors.New("repository is not connected with project")
 		ginutil.WriteAPIClientReadError(c, err,
-			fmt.Sprintf("Repository ID (%s) and project ID (%s) mismatch",
+			fmt.Sprintf("Repository ID (%s) and project ID (%s) mismatch.",
 				repositories.Value[0].Project.ID,
 				project.ID))
 		return azureDevOpsRepositoryResponse{}, false
@@ -423,7 +421,7 @@ func getBuildDefinitionWritesProblem(c *gin.Context, i importBody, projectName s
 	}, "%s/%s/%s/%s/%s", i.Group, i.Project, apiRepositories, projectName, itemsPath)
 	if err != nil {
 		fmt.Println("Unable to get url: ", err)
-		ginutil.WriteInvalidParamError(c, err, "URL", fmt.Sprintf("Unable to parse URL %q.", i.URL))
+		ginutil.WriteInvalidParamError(c, err, "url", fmt.Sprintf("Unable to parse URL %q.", i.URL))
 		return "", false
 	}
 
@@ -431,7 +429,7 @@ func getBuildDefinitionWritesProblem(c *gin.Context, i importBody, projectName s
 	if err != nil {
 		fmt.Println("Unable to get build definition: ", err)
 		ginutil.WriteFetchBuildDefinitionError(c, err,
-			fmt.Sprintf("Unable to fetch build definition for %q.", i.Project))
+			fmt.Sprintf("Unable to fetch build definition for project %q.", i.Project))
 		return "", false
 	}
 
@@ -452,18 +450,17 @@ func getGitURL(provider wharfapi.Provider, group string, project azureDevOpsProj
 }
 
 func getProjectWritesProblem(c *gin.Context, i importBody) (azureDevOpsProjectResponse, bool) {
-	const apiVersion string = "5.0"
 	values := []interface{}{i.Group, apiProjects, i.Project}
 	format := "%v/%v/%v"
 	getProjectURL, err := requests.ConstructGetURL(i.URL, map[string][]string{
-		"api-version": {apiVersion},
+		"api-version": {"5.0"},
 	}, format, values...)
 
 	if err != nil {
 		errorDetail := fmt.Sprintf("Unable to build url %q for '%v/%v/%v'",
 			i.URL, values[0], values[1], values[2])
 
-		ginutil.WriteInvalidParamError(c, err, "URL", errorDetail)
+		ginutil.WriteInvalidParamError(c, err, "url", errorDetail)
 		return azureDevOpsProjectResponse{}, false
 	}
 
@@ -484,11 +481,10 @@ func getProjectWritesProblem(c *gin.Context, i importBody) (azureDevOpsProjectRe
 }
 
 func getProjectsWritesProblem(c *gin.Context, i importBody) (azureDevOpsProjectResponse, bool) {
-	const apiVersion string = "5.0"
 	values := []interface{}{i.Group, apiProjects}
 	format := "%v/%v"
 	getProjectsURL, err := requests.ConstructGetURL(i.URL, map[string][]string{
-		"api-version": {apiVersion},
+		"api-version": {"5.0"},
 	}, format, values...)
 
 	if err != nil {
@@ -516,10 +512,8 @@ func getProjectsWritesProblem(c *gin.Context, i importBody) (azureDevOpsProjectR
 }
 
 func getProjectBranchesWritesProblem(c *gin.Context, i importBody, project string) ([]azureDevOpsBranch, bool) {
-	const apiVersion string = "5.0"
-
 	urlPath, err := requests.ConstructGetURL(i.URL, map[string][]string{
-		"api-version": {apiVersion},
+		"api-version": {"5.0"},
 		"filter":      {"heads/"},
 	}, "%v/%v/%v/%v/%v", i.Group, project, apiRepositories, project, refsPath)
 
