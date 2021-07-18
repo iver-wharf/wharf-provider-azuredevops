@@ -173,7 +173,7 @@ func prCreatedTriggerHandler(c *gin.Context) {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	t := azureDevOpsPR{}
-	if err := c.BindJSON(&t); err != nil {
+	if err := c.ShouldBindJSON(&t); err != nil {
 		ginutil.WriteInvalidBindError(c, err,
 			"One or more parameters failed to parse when reading the request body for pull request.")
 		return
@@ -228,7 +228,7 @@ func prCreatedTriggerHandler(c *gin.Context) {
 
 func bindImportDetails(c *gin.Context) (importBody, error) {
 	i := importBody{}
-	err := c.BindJSON(&i)
+	err := c.ShouldBindJSON(&i)
 	if err != nil {
 		return importBody{}, err
 	}
