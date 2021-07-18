@@ -104,12 +104,14 @@ func runAzureDevOpsHandler(c *gin.Context) {
 		AuthHeader: c.GetHeader("Authorization"),
 	}
 
-	i, err := bindImportDetails(c)
+	i := importBody{}
+	err := c.ShouldBindJSON(&i)
 	if err != nil {
 		ginutil.WriteInvalidBindError(c, err,
 			"One or more parameters failed to parse when reading the request body for import details.")
-		return
+			return
 	}
+
 	fmt.Println("from json: ", i)
 
 	if i.Group == "" {
@@ -224,16 +226,6 @@ func prCreatedTriggerHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, resp)
-}
-
-func bindImportDetails(c *gin.Context) (importBody, error) {
-	i := importBody{}
-	err := c.ShouldBindJSON(&i)
-	if err != nil {
-		return importBody{}, err
-	}
-
-	return i, nil
 }
 
 func putProjectWritesProblem(c *gin.Context, client wharfapi.Client, provider wharfapi.Provider,
