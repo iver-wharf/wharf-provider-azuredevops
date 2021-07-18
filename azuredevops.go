@@ -136,7 +136,12 @@ func runAzureDevOpsHandler(c *gin.Context) {
 	fmt.Println("Provider from db: ", provider)
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	projects, ok := getProjectsWritesProblem(c, i)
+	var projects azureDevOpsProjectResponse
+	if i.Project != "" {
+		projects, ok = getProjectWritesProblem(c, i)
+	} else {
+		projects, ok = getProjectsWritesProblem(c, i)
+	}
 	if !ok {
 		return
 	}
@@ -447,33 +452,17 @@ func getGitURL(provider wharfapi.Provider, group string, project azureDevOpsProj
 	return gitURL, nil
 }
 
-func getProjectsWritesProblem(c *gin.Context, i importBody) (azureDevOpsProjectResponse, bool) {
-	var getProjectsURL *url.URL
-	var format string
-	var values []interface{}
-	if i.Project != "" {
-		format = "%v/%v/%v"
-		values = []interface{}{i.Group, apiProjects, i.Project}
-	} else {
-		format = "%v/%v"
-		values = []interface{}{i.Group, apiProjects}
-	}
-
+func getProjectWritesProblem(c *gin.Context, i importBody) (azureDevOpsProjectResponse, bool) {
 	const apiVersion string = "5.0"
-	getProjectsURL, err := requests.ConstructGetURL(i.URL, map[string][]string{
+	values := []interface{}{i.Group, apiProjects, i.Project}
+	format := "%v/%v/%v"
+	getProjectURL, err := requests.ConstructGetURL(i.URL, map[string][]string{
 		"api-version": {apiVersion},
 	}, format, values...)
 
 	if err != nil {
-		var errorDetail string
-
-		if i.Project != "" {
-			errorDetail = fmt.Sprintf("Unable to build url %q for '%v/%v/%v'",
-				i.URL, values[0], values[1], values[2])
-		} else {
-			errorDetail = fmt.Sprintf("Unable to build url %q for '%v/%v'",
-				i.URL, values[0], values[1])
-		}
+		errorDetail := fmt.Sprintf("Unable to build url %q for '%v/%v/%v'",
+			i.URL, values[0], values[1], values[2])
 
 		ginutil.WriteInvalidParamError(c, err, "URL", errorDetail)
 		return azureDevOpsProjectResponse{}, false
@@ -484,11 +473,39 @@ func getProjectsWritesProblem(c *gin.Context, i importBody) (azureDevOpsProjectR
 		Value: make([]azureDevOpsProject, 1),
 	}
 
-	if i.Project != "" {
-		err = requests.GetAndParseJSON(&projects.Value[0], i.User, i.Token, getProjectsURL)
-	} else {
-		err = requests.GetAndParseJSON(&projects, i.User, i.Token, getProjectsURL)
+	err = requests.GetAndParseJSON(&projects.Value[0], i.User, i.Token, getProjectURL)
+
+	if err != nil {
+		ginutil.WriteProviderResponseError(c, err, "Could be caused by invalid JSON data structure."+
+			"\nMight be the result of an incompatible version of Azure DevOps.")
+		return azureDevOpsProjectResponse{}, false
 	}
+
+	return projects, true
+}
+
+func getProjectsWritesProblem(c *gin.Context, i importBody) (azureDevOpsProjectResponse, bool) {
+	const apiVersion string = "5.0"
+	values := []interface{}{i.Group, apiProjects}
+	format := "%v/%v"
+	getProjectsURL, err := requests.ConstructGetURL(i.URL, map[string][]string{
+		"api-version": {apiVersion},
+	}, format, values...)
+
+	if err != nil {
+		errorDetail := fmt.Sprintf("Unable to build url %q for '%v/%v'",
+			i.URL, values[0], values[1])
+
+		ginutil.WriteInvalidParamError(c, err, "URL", errorDetail)
+		return azureDevOpsProjectResponse{}, false
+	}
+
+	projects := azureDevOpsProjectResponse{
+		Count: 1,
+		Value: make([]azureDevOpsProject, 1),
+	}
+
+	err = requests.GetAndParseJSON(&projects, i.User, i.Token, getProjectsURL)
 
 	if err != nil {
 		ginutil.WriteProviderResponseError(c, err, "Could be caused by invalid JSON data structure."+
