@@ -147,13 +147,13 @@ func runAzureDevOpsHandler(c *gin.Context) {
 	}
 
 	for _, project := range projects.Value {
-		projectInDb, ok := putProjectWritesProblem(c, client, provider, i, project)
+		projectInDB, ok := putProjectWritesProblem(c, client, provider, i, project)
 		if !ok {
 			fmt.Printf("Unable to import project %q", project.Name)
 			return
 		}
 
-		ok = postBranchesWritesProblem(c, client, i, project, projectInDb)
+		ok = postBranchesWritesProblem(c, client, i, project, projectInDB)
 		if !ok {
 			fmt.Printf("An error occured when importing branches from %q", project.Name)
 			return
@@ -248,15 +248,14 @@ func putProjectWritesProblem(c *gin.Context, client wharfapi.Client, provider wh
 		return wharfapi.Project{}, false
 	}
 
-	projectInDb, err := client.PutProject(
-		wharfapi.Project{
-			Name:            project.Name,
-			TokenID:         i.TokenID,
-			GroupName:       i.Group,
-			BuildDefinition: buildDefinitionStr,
-			Description:     project.Description,
-			ProviderID:      provider.ProviderID,
-			GitURL:          gitURL})
+	projectInDB, err := client.PutProject(wharfapi.Project{
+		Name:            project.Name,
+		TokenID:         i.TokenID,
+		GroupName:       i.Group,
+		BuildDefinition: buildDefinitionStr,
+		Description:     project.Description,
+		ProviderID:      provider.ProviderID,
+		GitURL:          gitURL})
 
 	if err != nil {
 		fmt.Println("Unable to put project: ", err)
@@ -266,11 +265,11 @@ func putProjectWritesProblem(c *gin.Context, client wharfapi.Client, provider wh
 		return wharfapi.Project{}, false
 	}
 
-	return projectInDb, true
+	return projectInDB, true
 }
 
 func postBranchesWritesProblem(c *gin.Context, client wharfapi.Client, i importBody,
-	project azureDevOpsProject, projectInDb wharfapi.Project) bool {
+	project azureDevOpsProject, projectInDB wharfapi.Project) bool {
 	repositories, ok := getRepositoriesWritesProblem(c, i, project)
 	if !ok {
 		return false
@@ -284,7 +283,7 @@ func postBranchesWritesProblem(c *gin.Context, client wharfapi.Client, i importB
 	for _, branch := range projectBranches {
 		_, err := client.PutBranch(wharfapi.Branch{
 			Name:      branch.Name,
-			ProjectID: projectInDb.ProjectID,
+			ProjectID: projectInDB.ProjectID,
 			Default:   branch.Ref == repositories.Value[0].DefaultBranch,
 			TokenID:   i.TokenID,
 		})
