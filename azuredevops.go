@@ -302,7 +302,7 @@ func getTokenByIDWritesProblem(c *gin.Context, client wharfapi.Client, tokenID u
 	if err != nil || token.TokenID == 0 {
 		fmt.Printf("Unable to get token. %+v", err)
 		ginutil.WriteAPIClientReadError(c, err,
-			fmt.Sprintf("Unable to get token by id %v.", tokenID))
+			fmt.Sprintf("Unable to get token by ID %d.", tokenID))
 		return wharfapi.Token{}, false
 	}
 
@@ -312,7 +312,7 @@ func getTokenByIDWritesProblem(c *gin.Context, client wharfapi.Client, tokenID u
 func getOrPostTokenWritesProblem(c *gin.Context, client wharfapi.Client, i importBody) (wharfapi.Token, bool) {
 	var err error
 	if i.User == "" && i.TokenID == 0 {
-		err = fmt.Errorf("both token and user were omitted")
+		err = errors.New("both token and user were omitted")
 		ginutil.WriteInvalidParamError(c, err, "user",
 			"Unable to import when both user and token are omitted.")
 		return wharfapi.Token{}, false
@@ -351,7 +351,7 @@ func getOrPostProviderWritesProblem(c *gin.Context, client wharfapi.Client,
 		if err != nil || provider.ProviderID == 0 {
 			fmt.Printf("Unable to get provider. %+v", err)
 			ginutil.WriteAPIClientReadError(c, err,
-				fmt.Sprintf("Unable to get provider by id %v", i.ProviderID))
+				fmt.Sprintf("Unable to get provider by ID %d", i.ProviderID))
 			return wharfapi.Provider{}, false
 		}
 	} else {
@@ -408,7 +408,7 @@ func getRepositoriesWritesProblem(c *gin.Context, i importBody, project azureDev
 		fmt.Println("Repository is not connected with project.")
 		err = errors.New("repository is not connected with project")
 		ginutil.WriteAPIClientReadError(c, err,
-			fmt.Sprintf("Repository id (%s) and project id (%s) mismatch",
+			fmt.Sprintf("Repository ID (%s) and project ID (%s) mismatch",
 				repositories.Value[0].Project.ID,
 				project.ID))
 		return azureDevOpsRepositoryResponse{}, false
