@@ -12,25 +12,6 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-type importBody struct {
-	// used in refresh only
-	TokenID   uint   `json:"tokenId" example:"0"`
-	Token     string `json:"token" example:"sample token"`
-	User      string `json:"user" example:"sample user name"`
-	URL       string `json:"url" example:"https://gitlab.local"`
-	UploadURL string `json:"uploadUrl" example:""`
-	// used in refresh only
-	ProviderID uint `json:"providerId" example:"0"`
-	// azuredevops, gitlab or github
-	Provider string `json:"provider" example:"gitlab"`
-	// used in refresh only
-	ProjectID uint   `json:"projectId" example:"0"`
-	Project   string `json:"project" example:"sample project name"`
-	Group     string `json:"group" example:"default"`
-}
-
-const buildDefinitionFileName = ".wharf-ci.yml"
-
 // @title Wharf provider API for Azure DevOps
 // @description Wharf backend API for integrating Azure DevOps repositories
 // @description with the Wharf main API.

@@ -8,22 +8,12 @@ import (
 	"net/url"
 )
 
-// ConstructGetURL creates a GET request from a base URL, a map of query
-// parameters, and a formatted path.
-func ConstructGetURL(
-	rawURL string, queries map[string][]string, format string, values ...interface{}) (*url.URL, error) {
-
-	urlPath, err := url.Parse(rawURL)
-	if err != nil {
-		return nil, err
-	}
-
-	urlPath.Path = fmt.Sprintf(format, values...)
-	var q url.Values = queries
-	urlPath.RawQuery = q.Encode()
-
-	return urlPath, nil
-}
+const (
+	apiRepositories = "_apis/git/repositories"
+	apiProjects     = "_apis/projects"
+	itemsPath       = "items"
+	refsPath        = "refs"
+)
 
 // GetAndParseJSON invokes a HTTP request with basic auth.
 // On success the response body will be unmarshalled as JSON.
@@ -75,4 +65,91 @@ func getBodyFromRequest(user string, token string, urlPath *url.URL) ([]byte, er
 	}
 
 	return bodyBytes, nil
+}
+
+// NewGetRepositories constructs a GET request for getting repositories.
+func NewGetRepositories(rawURL, groupName, projectName string) (*url.URL, error) {
+	urlPath, err := url.Parse(rawURL)
+	if err != nil {
+		return nil, err
+	}
+
+	urlPath.Path = fmt.Sprintf("%s/%s/%s", groupName, projectName, apiRepositories)
+
+	q := url.Values{}
+	q.Add("api-version", "5.0")
+	urlPath.RawQuery = q.Encode()
+
+	return urlPath, nil
+}
+
+// NewGetFile constructs a GET request for getting a file from a repository.
+func NewGetFile(rawURL, groupName, projectName, filePath string) (*url.URL, error) {
+	urlPath, err := url.Parse(rawURL)
+	if err != nil {
+		return nil, err
+	}
+
+	urlPath.Path = fmt.Sprintf("%s/%s/%s/%s/%s",
+		groupName, projectName,
+		apiRepositories, projectName,
+		itemsPath)
+
+	q := url.Values{}
+	q.Add("scopePath", fmt.Sprintf("/%s", filePath))
+	urlPath.RawQuery = q.Encode()
+
+	return urlPath, nil
+}
+
+// NewGetProject constructs a GET request for getting a project.
+func NewGetProject(rawURL, groupName, projectName string) (*url.URL, error) {
+	urlPath, err := url.Parse(rawURL)
+	if err != nil {
+		return nil, err
+	}
+
+	urlPath.Path = fmt.Sprintf("%s/%s/%s", groupName, apiProjects, projectName)
+
+	q := url.Values{}
+	q.Add("api-version", "5.0")
+	urlPath.RawQuery = q.Encode()
+
+	return urlPath, nil
+}
+
+// NewGetProjects constructs a GET request for getting all projects from a group.
+func NewGetProjects(rawURL, groupName string) (*url.URL, error) {
+	urlPath, err := url.Parse(rawURL)
+	if err != nil {
+		return nil, err
+	}
+
+	urlPath.Path = fmt.Sprintf("%s/%s", groupName, apiProjects)
+
+	q := url.Values{}
+	q.Add("api-version", "5.0")
+	urlPath.RawQuery = q.Encode()
+
+	return urlPath, nil
+}
+
+// NewGetGitRefs constructs a GET request for getting git refs from a project.
+func NewGetGitRefs(rawURL, groupName, projectName, refsFilter string) (*url.URL, error) {
+	urlPath, err := url.Parse(rawURL)
+	if err != nil {
+		return nil, err
+	}
+
+	urlPath.Path = fmt.Sprintf("%s/%s/%s/%s/%s",
+		groupName, projectName,
+		apiRepositories, projectName,
+		refsPath)
+
+	q := url.Values{}
+	q.Add("api-version", "5.0")
+	q.Add("filter", refsFilter)
+	urlPath.RawQuery = q.Encode()
+
+	return urlPath, nil
 }
