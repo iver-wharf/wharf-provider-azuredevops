@@ -18,9 +18,9 @@ type azureClient struct {
 	Token       wharfapi.Token
 	Provider    wharfapi.Provider
 	// used in refresh only
-	UserName  string `json:"user" example:"sample user name"`
-	URL       string `json:"url" example:"https://gitlab.local"`
-	UploadURL string `json:"uploadUrl" example:""`
+	UserName  string
+	URL       string
+	UploadURL string
 }
 
 // GetProjectWritesProblem attempts to get a project from the remote provider,

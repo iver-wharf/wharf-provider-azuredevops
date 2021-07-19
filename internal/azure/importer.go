@@ -94,9 +94,9 @@ type azureImporter struct {
 	wharfClient *wharfapi.Client
 	data        ImportData
 	// retrieved from database
-	token wharfapi.Token `json:"-"`
+	token wharfapi.Token
 	// retrieved from database
-	provider wharfapi.Provider `json:"-"`
+	provider wharfapi.Provider
 }
 
 func NewImporterWritesProblem(c *gin.Context, wharfClient *wharfapi.Client) (*azureImporter, bool) {
