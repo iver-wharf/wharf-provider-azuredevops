@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -13,7 +12,7 @@ import (
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	_ "github.com/iver-wharf/wharf-provider-azuredevops/docs"
-	"github.com/iver-wharf/wharf-provider-azuredevops/internal/importer"
+	"github.com/iver-wharf/wharf-provider-azuredevops/internal/azure"
 )
 
 type azureDevOpsPR struct {
@@ -42,57 +41,25 @@ func runAzureDevOpsHandler(c *gin.Context) {
 		AuthHeader: c.GetHeader("Authorization"),
 	}
 
-	i := importer.AzureDevOpsImporter{}
-	err := c.ShouldBindJSON(&i)
-	if err != nil {
-		ginutil.WriteInvalidBindError(c, err,
-			"One or more parameters failed to parse when reading the request body for import details.")
-		return
-	}
-
-	fmt.Println("from json: ", i)
-
-	if i.GroupName == "" {
-		fmt.Println("Unable to get due to empty group.")
-		err := errors.New("missing required property: group")
-		ginutil.WriteInvalidParamError(c, err, "group",
-			"Unable to import due to empty group.")
-		return
-	}
-
-	var ok bool
-	i.Token, ok = i.GetOrPostTokenWritesProblem(c, client)
-	if !ok {
-		fmt.Println("Unable to get or create token.")
-		return
-	}
-	fmt.Println("Token from db: ", i.Token)
-
-	i.Provider, ok = i.GetOrPostProviderWritesProblem(c, client)
+	importer, ok := azure.NewImporterWritesProblem(c, &client)
 	if !ok {
 		return
 	}
-	fmt.Println("Provider from db: ", i.Provider)
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	var projects importer.AzureDevOpsProjectResponse
-	if i.ProjectName != "" {
-		projects, ok = i.GetProjectWritesProblem(c)
-	} else {
-		projects, ok = i.GetProjectsWritesProblem(c)
-	}
+	projects, ok := importer.GetProjectsWritesProblem()
 	if !ok {
 		return
 	}
 
 	for _, project := range projects.Value {
-		projectInDB, ok := i.PutProjectWritesProblem(c, client, project)
+		projectInDB, ok := importer.PutProjectWritesProblem(project)
 		if !ok {
 			fmt.Printf("Unable to import project %q", project.Name)
 			return
 		}
 
-		ok = i.PostBranchesWritesProblem(c, client, project, projectInDB)
+		ok = importer.PostBranchesWritesProblem(project, projectInDB)
 		if !ok {
 			fmt.Printf("An error occured when importing branches from %q", project.Name)
 			return
