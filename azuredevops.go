@@ -109,7 +109,7 @@ func runAzureDevOpsHandler(c *gin.Context) {
 	if err != nil {
 		ginutil.WriteInvalidBindError(c, err,
 			"One or more parameters failed to parse when reading the request body for import details.")
-			return
+		return
 	}
 
 	fmt.Println("from json: ", i)
@@ -310,22 +310,22 @@ func getTokenByIDWritesProblem(c *gin.Context, client wharfapi.Client, tokenID u
 }
 
 func getOrPostTokenWritesProblem(c *gin.Context, client wharfapi.Client, i importBody) (wharfapi.Token, bool) {
-	var err error
 	if i.User == "" && i.TokenID == 0 {
-		err = errors.New("both token and user were omitted")
+		err := errors.New("both token and user were omitted")
 		ginutil.WriteInvalidParamError(c, err, "user",
 			"Unable to import when both user and token are omitted.")
 		return wharfapi.Token{}, false
 	}
 
 	var token wharfapi.Token
-	var ok bool
 	if i.TokenID != 0 {
+		var ok bool
 		token, ok = getTokenByIDWritesProblem(c, client, i.TokenID)
 		if !ok {
 			return wharfapi.Token{}, false
 		}
 	} else {
+		var err error
 		token, err = client.GetToken(i.Token, i.User)
 		if err != nil || token.TokenID == 0 {
 			token, err = client.PostToken(wharfapi.Token{Token: i.Token, UserName: i.User})
