@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -12,15 +13,25 @@ import (
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	_ "github.com/iver-wharf/wharf-provider-azuredevops/docs"
-	"github.com/iver-wharf/wharf-provider-azuredevops/internal/azure"
+	"github.com/iver-wharf/wharf-provider-azuredevops/internal/azureapi"
+	"github.com/iver-wharf/wharf-provider-azuredevops/internal/importer"
 )
 
-type azureDevOpsPR struct {
-	EventType string `json:"eventType" example:"git.pullrequest.created"`
-	Resource  struct {
-		PullRequestID uint   `json:"pullRequestId" example:"1"`
-		SourceRefName string `json:"sourceRefName" example:"refs/heads/master"`
-	}
+type importData struct {
+	// used in refresh only
+	TokenID   uint   `json:"tokenId" example:"0"`
+	Token     string `json:"token" example:"sample token"`
+	UserName  string `json:"user" example:"sample user name"`
+	URL       string `json:"url" example:"https://gitlab.local"`
+	UploadURL string `json:"uploadUrl" example:""`
+	// used in refresh only
+	ProviderID uint `json:"providerId" example:"0"`
+	// azuredevops, gitlab or github
+	ProviderName string `json:"provider" example:"gitlab"`
+	// used in refresh only
+	ProjectID   uint   `json:"projectId" example:"0"`
+	ProjectName string `json:"project" example:"sample project name"`
+	GroupName   string `json:"group" example:"default"`
 }
 
 // runAzureDevOpsHandler godoc
@@ -41,29 +52,50 @@ func runAzureDevOpsHandler(c *gin.Context) {
 		AuthHeader: c.GetHeader("Authorization"),
 	}
 
-	importer, ok := azure.NewImporterWritesProblem(c, &client)
+	i := importData{}
+	err := c.ShouldBindJSON(&i)
+	if err != nil {
+		ginutil.WriteInvalidBindError(c, err,
+			"One or more parameters failed to parse when reading the request body for import details.")
+		return
+	}
+
+	if i.GroupName == "" {
+		fmt.Println("Unable to get due to empty group.")
+		err := errors.New("missing required property: group")
+		ginutil.WriteInvalidParamError(c, err, "group",
+			"Unable to import due to empty group.")
+		return
+	}
+
+	fmt.Println("from json: ", i)
+
+	importer := importer.NewAzureImporter(c, &client)
+	token := wharfapi.Token{
+		TokenID:    i.TokenID,
+		Token:      i.Token,
+		UserName:   i.UserName,
+		ProviderID: i.ProviderID}
+	provider := wharfapi.Provider{
+		ProviderID: i.ProviderID,
+		Name:       i.ProviderName,
+		URL:        i.URL,
+		UploadURL:  i.UploadURL,
+		TokenID:    i.TokenID}
+
+	ok := importer.Init(token, provider, c, client)
 	if !ok {
 		return
 	}
 
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	projects, ok := importer.GetProjectsWritesProblem()
-	if !ok {
-		return
+	if i.ProjectName != "" {
+		ok = importer.ImportProjectInGroup(i.GroupName, i.ProjectName)
+	} else {
+		ok = importer.ImportAllProjectsInGroup(i.GroupName)
 	}
 
-	for _, project := range projects.Value {
-		projectInDB, ok := importer.PutProjectWritesProblem(project)
-		if !ok {
-			fmt.Printf("Unable to import project %q", project.Name)
-			return
-		}
-
-		ok = importer.PostBranchesWritesProblem(project, projectInDB)
-		if !ok {
-			fmt.Printf("An error occured when importing branches from %q", project.Name)
-			return
-		}
+	if !ok {
+		return
 	}
 
 	c.Status(http.StatusCreated)
@@ -85,7 +117,7 @@ func prCreatedTriggerHandler(c *gin.Context) {
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	t := azureDevOpsPR{}
+	t := azureapi.PullRequestEvent{}
 	if err := c.ShouldBindJSON(&t); err != nil {
 		ginutil.WriteInvalidBindError(c, err,
 			"One or more parameters failed to parse when reading the request body for pull request.")
