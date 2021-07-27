@@ -3,6 +3,7 @@ package azureapi
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,8 @@ import (
 type Client struct {
 	Context  *gin.Context
 	BaseURL  string
+	// BaseURLParsed is the result of url.Parse(BaseURL)
+	BaseURLParsed *url.URL
 	UserName string
 	Token    string
 }
@@ -21,7 +24,7 @@ type Client struct {
 // GetProjectWritesProblem attempts to get a project from the remote provider,
 // matching the provided group and project name.
 func (c *Client) GetProjectWritesProblem(groupName, projectName string) (Project, bool) {
-	getProjectURL, err := requests.NewGetProject(c.BaseURL, groupName, projectName)
+	getProjectURL, err := c.newGetProject(groupName, projectName)
 
 	if err != nil {
 		errorDetail := fmt.Sprintf("Unable to build url %q for '%s/_apis/projects/%s'",
@@ -52,7 +55,7 @@ func (c *Client) GetProjectWritesProblem(groupName, projectName string) (Project
 // GetProjectsWritesProblem attempts to get all projects from the specified URL
 // that are part of the provided group.
 func (c *Client) GetProjectsWritesProblem(groupName string) ([]Project, bool) {
-	getProjectsURL, err := requests.NewGetProjects(c.BaseURL, groupName)
+	getProjectsURL, err := c.newGetProjects(groupName)
 
 	if err != nil {
 		errorDetail := fmt.Sprintf("Unable to build url %q for '%s/_apis/projects'",
@@ -82,7 +85,7 @@ func (c *Client) GetProjectsWritesProblem(groupName string) ([]Project, bool) {
 // GetRepositoryWritesProblem attempts to get a repository matching the
 // specified project's id using BasicAuth.
 func (c *Client) GetRepositoryWritesProblem(groupName string, project Project) (Repository, bool) {
-	urlPath, err := requests.NewGetRepositories(c.BaseURL, groupName, project.Name)
+	urlPath, err := c.newGetRepositories(groupName, project.Name)
 	if err != nil {
 		fmt.Println("Unable to get url: ", err)
 		ginutil.WriteInvalidParamError(c.Context, err, "URL", fmt.Sprintf("Unable to parse URL %q", c.BaseURL))
@@ -129,7 +132,7 @@ func (c *Client) GetRepositoryWritesProblem(groupName string, project Project) (
 // GetFileWritesProblem attempts to get a file from the specified project using
 // BasicAuth.
 func (c *Client) GetFileWritesProblem(groupName, projectName, filePath string) (string, bool) {
-	urlPath, err := requests.NewGetFile(c.BaseURL, groupName, projectName, filePath)
+	urlPath, err := c.newGetFile(groupName, projectName, filePath)
 	if err != nil {
 		fmt.Println("Unable to get url: ", err)
 		ginutil.WriteInvalidParamError(c.Context, err, "url", fmt.Sprintf("Unable to parse URL %q.", c.BaseURL))
@@ -150,7 +153,7 @@ func (c *Client) GetFileWritesProblem(groupName, projectName, filePath string) (
 // GetProjectBranchesWritesProblem invokes a GET request to the remote provider,
 // fetching the branches for the specified project.
 func (c *Client) GetProjectBranchesWritesProblem(groupName, projectName, refsFilter string) ([]Branch, bool) {
-	urlPath, err := requests.NewGetGitRefs(c.BaseURL, groupName, projectName, refsFilter)
+	urlPath, err := c.newGetGitRefs(groupName, projectName, refsFilter)
 	if err != nil {
 		ginutil.WriteInvalidParamError(c.Context, err, "URL", fmt.Sprintf("Unable to parse URL %q", c.BaseURL))
 		return []Branch{}, false
@@ -185,4 +188,62 @@ func (c *Client) GetProjectBranchesWritesProblem(groupName, projectName, refsFil
 	}
 
 	return projectBranches, true
+}
+
+func (c *Client) newGetRepositories(groupName, projectName string) (*url.URL, error) {
+	urlPath := *c.BaseURLParsed
+	urlPath.Path = fmt.Sprintf("%s/%s/_apis/repositories", groupName, projectName)
+
+	q := url.Values{}
+	q.Add("api-version", "5.0")
+	urlPath.RawQuery = q.Encode()
+
+	return &urlPath, nil
+}
+
+func (c *Client) newGetFile(groupName, projectName, filePath string) (*url.URL, error) {
+	urlPath := *c.BaseURLParsed
+	urlPath.Path = fmt.Sprintf("%s/%s/_apis/repositories/%s/items",
+		groupName, projectName, projectName)
+
+	q := url.Values{}
+	q.Add("scopePath", fmt.Sprintf("/%s", filePath))
+	urlPath.RawQuery = q.Encode()
+
+	return &urlPath, nil
+}
+
+func (c *Client) newGetProject(groupName, projectName string) (*url.URL, error) {
+	urlPath := *c.BaseURLParsed
+	urlPath.Path = fmt.Sprintf("%s/_apis/projects/%s", groupName, projectName)
+
+	q := url.Values{}
+	q.Add("api-version", "5.0")
+	urlPath.RawQuery = q.Encode()
+
+	return &urlPath, nil
+}
+
+func (c *Client) newGetProjects(groupName string) (*url.URL, error) {
+	urlPath := *c.BaseURLParsed
+	urlPath.Path = fmt.Sprintf("%s/_apis/projects", groupName)
+
+	q := url.Values{}
+	q.Add("api-version", "5.0")
+	urlPath.RawQuery = q.Encode()
+
+	return &urlPath, nil
+}
+
+func (c *Client) newGetGitRefs(groupName, projectName, refsFilter string) (*url.URL, error) {
+	urlPath := *c.BaseURLParsed
+	urlPath.Path = fmt.Sprintf("%s/%s/_apis/repositories/%s/refs",
+		groupName, projectName, projectName)
+
+	q := url.Values{}
+	q.Add("api-version", "5.0")
+	q.Add("filter", refsFilter)
+	urlPath.RawQuery = q.Encode()
+
+	return &urlPath, nil
 }

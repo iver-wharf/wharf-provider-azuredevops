@@ -61,9 +61,17 @@ func (i azureImporter) InitWritesProblem(token wharfapi.Token, provider wharfapi
 	fmt.Println("Provider from db: ", i.provider)
 
 	i.wharf = &client
+
+	urlParsed, err := url.Parse(i.provider.URL)
+	if err != nil {
+		ginutil.WriteComposingProviderDataError(i.c, err,
+			fmt.Sprintf("Unable parse the provider URL %q", i.provider.URL))
+	}
+
 	i.azure = &azureapi.Client{
 		Context:  c,
 		BaseURL:  i.provider.URL,
+		BaseURLParsed: urlParsed,
 		UserName: i.token.UserName,
 		Token:    i.token.Token,
 	}
