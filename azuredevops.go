@@ -111,6 +111,7 @@ func runAzureDevOpsHandler(c *gin.Context) {
 // @Success 200 {object} wharfapi.ProjectRunResponse "OK"
 // @Failure 400 {object} problem.Response "Bad request"
 // @Failure 401 {object} problem.Response "Unauthorized or missing jwt token"
+// @Failure 502 {object} problem.Response "Bad gateway"
 // @Router /azuredevops/triggers/{projectid}/pr/created [post]
 func prCreatedTriggerHandler(c *gin.Context) {
 	const eventTypePullRequest string = "git.pullrequest.created"
@@ -160,6 +161,13 @@ func prCreatedTriggerHandler(c *gin.Context) {
 			Environment: environment,
 		},
 	)
+
+	if authErr, ok := err.(*wharfapi.AuthError); ok {
+		ginutil.WriteUnauthorizedError(c, authErr,
+			"Failed to authenticate to the Wharf API. The Authorization header was "+
+			"missing or is invalid.")
+			return
+	}
 
 	if err != nil {
 		fmt.Println("Unable to send trigger to wharf-client: ", err)
