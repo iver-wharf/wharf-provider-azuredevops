@@ -24,20 +24,15 @@ const (
 // All of the functions will write a problem to the provided gin.Context when an
 // error occurs.
 type Importer interface {
-	// Init initializes the importer, verifying the token and provider data.
-	//
-	// Writes a problem to the provided gin.Context on failure.
-	Init(token wharfapi.Token, provider wharfapi.Provider, c *gin.Context, client wharfapi.Client) bool
-	// ImportProjectInGroup imports a single project from a specific
-	// group/organization.
-	//
-	// Writes a problem to the provided gin.Context on failure.
-	ImportProjectInGroup(groupName, projectName string) bool
-	// ImportAllProjectsInGroup imports all projects from a specific
-	// group/organization.
-	//
-	// Writes a problem to the provided gin.Context on failure.
-	ImportAllProjectsInGroup(groupName string) bool
+	// InitWritesProblem gets/creates the specified token and provider from the Wharf API and
+	// initializes the AzureAPI client.
+	InitWritesProblem(token wharfapi.Token, provider wharfapi.Provider, c *gin.Context, client wharfapi.Client) bool
+	// ImportProjectInGroupWritesProblem retrieves a project from Azure DevOps and imports it
+	// into the Wharf API database.
+	ImportProjectInGroupWritesProblem(groupName, projectName string) bool
+	// ImportAllProjectsInGroupWritesProblem retrieves all projects from an Azure DevOps group
+	// and imports it into the Wharf API database.
+	ImportAllProjectsInGroupWritesProblem(groupName string) bool
 }
 
 type azureImporter struct {
@@ -50,7 +45,7 @@ type azureImporter struct {
 	provider wharfapi.Provider
 }
 
-func (i azureImporter) Init(token wharfapi.Token, provider wharfapi.Provider, c *gin.Context, client wharfapi.Client) bool {
+func (i azureImporter) InitWritesProblem(token wharfapi.Token, provider wharfapi.Provider, c *gin.Context, client wharfapi.Client) bool {
 	var ok bool
 	i.token, ok = i.getOrPostTokenWritesProblem(token)
 	if !ok {
@@ -76,7 +71,7 @@ func (i azureImporter) Init(token wharfapi.Token, provider wharfapi.Provider, c 
 	return true
 }
 
-func (i azureImporter) ImportProjectInGroup(groupName, projectName string) bool {
+func (i azureImporter) ImportProjectInGroupWritesProblem(groupName, projectName string) bool {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	project, ok := i.azure.GetProjectWritesProblem(groupName, projectName)
 	if !ok {
@@ -88,7 +83,7 @@ func (i azureImporter) ImportProjectInGroup(groupName, projectName string) bool 
 	return true
 }
 
-func (i azureImporter) ImportAllProjectsInGroup(groupName string) bool {
+func (i azureImporter) ImportAllProjectsInGroupWritesProblem(groupName string) bool {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	projects, ok := i.azure.GetProjectsWritesProblem(groupName)
 	if !ok {
@@ -128,7 +123,7 @@ func (i azureImporter) putProjectToWharfWithBranchesWritesProblem(groupName stri
 	return true
 }
 
-func (i *azureImporter) putProjectToWharfWritesProblem(groupName string, project azureapi.Project) (wharfapi.Project, bool) {
+func (i azureImporter) putProjectToWharfWritesProblem(groupName string, project azureapi.Project) (wharfapi.Project, bool) {
 	buildDefinitionStr, ok := i.azure.GetFileWritesProblem(groupName, project.Name, buildDefinitionFileName)
 	if !ok {
 		return wharfapi.Project{}, false
@@ -162,7 +157,7 @@ func (i *azureImporter) putProjectToWharfWritesProblem(groupName string, project
 	return projectInDB, true
 }
 
-func (i *azureImporter) postBranchesToWharfWritesProblem(groupName string, project azureapi.Project, projectInDB wharfapi.Project) bool {
+func (i azureImporter) postBranchesToWharfWritesProblem(groupName string, project azureapi.Project, projectInDB wharfapi.Project) bool {
 	repository, ok := i.azure.GetRepositoryWritesProblem(groupName, project)
 	if !ok {
 		return false
@@ -190,7 +185,7 @@ func (i *azureImporter) postBranchesToWharfWritesProblem(groupName string, proje
 	return true
 }
 
-func (i *azureImporter) getTokenByIDWritesProblem(tokenID uint) (wharfapi.Token, bool) {
+func (i azureImporter) getTokenByIDWritesProblem(tokenID uint) (wharfapi.Token, bool) {
 	token, err := i.wharf.GetTokenById(tokenID)
 	if err != nil || token.TokenID == 0 {
 		fmt.Printf("Unable to get token. %+v", err)
@@ -202,7 +197,7 @@ func (i *azureImporter) getTokenByIDWritesProblem(tokenID uint) (wharfapi.Token,
 	return token, true
 }
 
-func (i *azureImporter) getOrPostTokenWritesProblem(token wharfapi.Token) (wharfapi.Token, bool) {
+func (i azureImporter) getOrPostTokenWritesProblem(token wharfapi.Token) (wharfapi.Token, bool) {
 	if token.UserName == "" && token.TokenID == 0 {
 		err := errors.New("both token and user were omitted")
 		ginutil.WriteInvalidParamError(i.c, err, "user",
@@ -234,7 +229,7 @@ func (i *azureImporter) getOrPostTokenWritesProblem(token wharfapi.Token) (wharf
 	return token, true
 }
 
-func (i *azureImporter) getOrPostProviderWritesProblem(provider wharfapi.Provider) (wharfapi.Provider, bool) {
+func (i azureImporter) getOrPostProviderWritesProblem(provider wharfapi.Provider) (wharfapi.Provider, bool) {
 	var err error
 	if provider.ProviderID != 0 {
 		provider, err = i.wharf.GetProviderById(provider.ProviderID)
@@ -268,7 +263,7 @@ func (i *azureImporter) getOrPostProviderWritesProblem(provider wharfapi.Provide
 	return provider, true
 }
 
-func (i *azureImporter) constructGitURL(groupName, projectName string) (string, error) {
+func (i azureImporter) constructGitURL(groupName, projectName string) (string, error) {
 	providerURL, err := url.Parse(i.provider.URL)
 
 	if err != nil {

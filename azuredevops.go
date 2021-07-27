@@ -83,15 +83,15 @@ func runAzureDevOpsHandler(c *gin.Context) {
 		UploadURL:  i.UploadURL,
 		TokenID:    i.TokenID}
 
-	ok := importer.Init(token, provider, c, client)
+	ok := importer.InitWritesProblem(token, provider, c, client)
 	if !ok {
 		return
 	}
 
 	if i.ProjectName != "" {
-		ok = importer.ImportProjectInGroup(i.GroupName, i.ProjectName)
+		ok = importer.ImportProjectInGroupWritesProblem(i.GroupName, i.ProjectName)
 	} else {
-		ok = importer.ImportAllProjectsInGroup(i.GroupName)
+		ok = importer.ImportAllProjectsInGroupWritesProblem(i.GroupName)
 	}
 
 	if !ok {
