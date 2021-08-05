@@ -38,7 +38,7 @@ type importData struct {
 // @Summary Import projects from Azure DevOps or refresh existing one
 // @Accept json
 // @Produce json
-// @Param import body importBody _ "import object"
+// @Param import body importData _ "import object"
 // @Success 201 "Successfully imported"
 // @Failure 400 {object} problem.Response "Bad request"
 // @Failure 401 {object} problem.Response "Unauthorized or missing jwt token"
@@ -106,7 +106,7 @@ func runAzureDevOpsHandler(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param projectid path int true "wharf project ID"
-// @Param azureDevOpsPR body azureDevOpsPR _ "AzureDevOps PR "
+// @Param azureDevOpsPR body azureapi.PullRequestEvent _ "AzureDevOps PR"
 // @Param environment query string true "wharf build environment"
 // @Success 200 {object} wharfapi.ProjectRunResponse "OK"
 // @Failure 400 {object} problem.Response "Bad request"
