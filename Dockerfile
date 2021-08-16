@@ -16,6 +16,7 @@ RUN deploy/update-version.sh version.yaml \
 
 FROM alpine:3.14.0 AS final
 RUN apk add --no-cache ca-certificates
+RUN apk add tzdata
 WORKDIR /app
 COPY --from=build /src/main ./
 ENTRYPOINT ["/app/main"]
