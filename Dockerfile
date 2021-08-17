@@ -15,8 +15,7 @@ RUN deploy/update-version.sh version.yaml \
 		&& CGO_ENABLED=0 go build -o main
 
 FROM alpine:3.14.0 AS final
-RUN apk add --no-cache ca-certificates
-RUN apk add tzdata
+RUN apk add --no-cache ca-certificates tzdata
 WORKDIR /app
 COPY --from=build /src/main ./
 ENTRYPOINT ["/app/main"]
