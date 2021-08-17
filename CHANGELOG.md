@@ -34,6 +34,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 ## v1.2.0 (2021-07-12)
 
+- Added support for the TZ environment variable (setting timezones ex.
+  `"Europe/Stockholm"`) through the tzdata package. (#20)
+
 - Added environment variable `BIND_ADDRESS` for setting bind address and port,
   which defaults to `0.0.0.0:8080` when left unset. (#11)
 
