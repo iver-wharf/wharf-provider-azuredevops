@@ -12,6 +12,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
+## v1.2.1 (WIP)
+
+- Added Makefile to simplify building and developing the project locally. (#21)
+
 ## v1.2.0 (2021-07-12)
 
 - Added environment variable `BIND_ADDRESS` for setting bind address and port,
