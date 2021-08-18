@@ -17,7 +17,7 @@ import (
 	"github.com/iver-wharf/wharf-provider-azuredevops/internal/importer"
 )
 
-type importData struct {
+type importBody struct {
 	// used in refresh only
 	TokenID   uint   `json:"tokenId" example:"0"`
 	Token     string `json:"token" example:"sample token"`
@@ -52,7 +52,7 @@ func runAzureDevOpsHandler(c *gin.Context) {
 		AuthHeader: c.GetHeader("Authorization"),
 	}
 
-	i := importData{}
+	i := importBody{}
 	err := c.ShouldBindJSON(&i)
 	if err != nil {
 		ginutil.WriteInvalidBindError(c, err,
