@@ -19,7 +19,8 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Updated wharf-core from v0.0.0 -> v1.0.0. (#14)
 
-- Added Makefile to simplify building and developing the project locally. (#21)
+- Added Makefile to simplify building and developing the project locally.
+  (#21, #22)
 
 ## v1.2.0 (2021-07-12)
 

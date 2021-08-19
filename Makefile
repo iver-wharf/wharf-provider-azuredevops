@@ -6,7 +6,7 @@ build: swag
 	@echo "Built binary found at ./wharf-provider-azuredevops or ./wharf-provider-azuredevops.exe"
 
 docker:
-	@echo docker build . \
+	docker build . \
 		-t "quay.io/iver-wharf/wharf-provider-azuredevops:latest" \
 		-t "quay.io/iver-wharf/wharf-provider-azuredevops:$(version)" \
 		--build-arg BUILD_VERSION="$(version)" \
