@@ -38,7 +38,7 @@ type importBody struct {
 // @Summary Import projects from Azure DevOps or refresh existing one
 // @Accept json
 // @Produce json
-// @Param import body importData _ "import object"
+// @Param import body importBody _ "import object"
 // @Success 201 "Successfully imported"
 // @Failure 400 {object} problem.Response "Bad request"
 // @Failure 401 {object} problem.Response "Unauthorized or missing jwt token"
