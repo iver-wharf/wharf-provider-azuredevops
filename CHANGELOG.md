@@ -12,7 +12,12 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
-## v1.2.1 (WIP)
+## v1.3.0 (WIP)
+
+- Changed to return IETF RFC-7807 compatible problem responses on failures
+  instead of solely JSON-formatted strings. (#14)
+
+- Updated wharf-core from v0.0.0 -> v1.0.0. (#14)
 
 - Added Makefile to simplify building and developing the project locally. (#21)
 

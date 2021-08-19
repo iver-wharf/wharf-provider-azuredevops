@@ -51,7 +51,7 @@ go get -u github.com/mgechev/revive
 npm run lint-go
 ```
 
-# Releasing
+## Releasing
 
 Replace the "v2.0.0" in `make docker version=v2.0.0` with the new version. Full
 documentation can be found at [Releasing a new version](https://iver-wharf.github.io/#/development/releasing-a-new-version).
