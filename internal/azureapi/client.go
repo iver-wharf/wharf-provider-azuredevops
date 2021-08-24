@@ -8,17 +8,20 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
+	"github.com/iver-wharf/wharf-core/pkg/logger"
 	"github.com/iver-wharf/wharf-provider-azuredevops/pkg/requests"
 )
 
+var log = logger.NewScoped("AZURE-API")
+
 // Client is used to talk with the Azure DevOps API.
 type Client struct {
-	Context  *gin.Context
-	BaseURL  string
+	Context *gin.Context
+	BaseURL string
 	// BaseURLParsed is the result of url.Parse(BaseURL)
 	BaseURLParsed *url.URL
-	UserName string
-	Token    string
+	UserName      string
+	Token         string
 }
 
 // GetProjectWritesProblem attempts to get a project from the remote provider,
@@ -87,17 +90,17 @@ func (c *Client) GetProjectsWritesProblem(groupName string) ([]Project, bool) {
 func (c *Client) GetRepositoryWritesProblem(groupName string, project Project) (Repository, bool) {
 	urlPath, err := c.newGetRepositories(groupName, project.Name)
 	if err != nil {
-		fmt.Println("Unable to get url: ", err)
+		log.Error().WithError(err).Message("Failed to get URL.")
 		ginutil.WriteInvalidParamError(c.Context, err, "URL", fmt.Sprintf("Unable to parse URL %q", c.BaseURL))
 		return Repository{}, false
 	}
 
-	fmt.Println(urlPath.String())
+	log.Debug().WithStringer("url", urlPath).Message("Get repositories URL.")
 
 	repositories := repositoryResponse{}
 	err = requests.GetUnmarshalJSON(&repositories, c.UserName, c.Token, urlPath)
 	if err != nil {
-		fmt.Println("Unable to get project repository: ", err)
+		log.Error().WithError(err).Message("Failed to get project repository.")
 		ginutil.WriteProviderResponseError(c.Context, err,
 			fmt.Sprintf(
 				"Invalid response getting repositories from project %q in group %q. ",
@@ -108,7 +111,7 @@ func (c *Client) GetRepositoryWritesProblem(groupName string, project Project) (
 	}
 
 	if repositories.Count != 1 {
-		fmt.Println("One repository is required.")
+		log.Error().WithInt("repoCount", repositories.Count).Message("One repository is required.")
 		err = errors.New("one repository is required")
 		ginutil.WriteAPIClientReadError(c.Context, err,
 			fmt.Sprintf("There were %d repositories, we need it to be 1.",
@@ -116,12 +119,16 @@ func (c *Client) GetRepositoryWritesProblem(groupName string, project Project) (
 		return Repository{}, false
 	}
 
-	if repositories.Value[0].Project.ID != project.ID {
-		fmt.Println("Repository is not connected with project.")
+	freshProjectID := repositories.Value[0].Project.ID
+	if freshProjectID != project.ID {
+		log.Error().
+			WithString("got", freshProjectID).
+			WithString("want", project.ID).
+			Message("Repository is not connected with project.")
 		err = errors.New("repository is not connected with project")
 		ginutil.WriteAPIClientReadError(c.Context, err,
 			fmt.Sprintf("Repository ID (%s) and project ID (%s) mismatch.",
-				repositories.Value[0].Project.ID,
+				freshProjectID,
 				project.ID))
 		return Repository{}, false
 	}
@@ -134,14 +141,20 @@ func (c *Client) GetRepositoryWritesProblem(groupName string, project Project) (
 func (c *Client) GetFileWritesProblem(groupName, projectName, filePath string) (string, bool) {
 	urlPath, err := c.newGetFile(groupName, projectName, filePath)
 	if err != nil {
-		fmt.Println("Unable to get url: ", err)
+		log.Error().WithError(err).Message("Failed to get URL.")
 		ginutil.WriteInvalidParamError(c.Context, err, "url", fmt.Sprintf("Unable to parse URL %q.", c.BaseURL))
 		return "", false
 	}
 
+	log.Debug().WithStringer("url", urlPath).Message("Get file URL.")
+
 	fileContents, err := requests.GetAsString(c.UserName, c.Token, urlPath)
 	if err != nil {
-		fmt.Printf("Unable to fetch file from project %q: %+v\n", projectName, err)
+		log.Error().
+			WithError(err).
+			WithStringf("project", "%s/%s", groupName, projectName).
+			WithString("file", filePath).
+			Message("Failed to fetch file from project.")
 		ginutil.WriteFetchBuildDefinitionError(c.Context, err,
 			fmt.Sprintf("Unable to fetch file from project %q.", projectName))
 		return "", false
@@ -159,7 +172,7 @@ func (c *Client) GetProjectBranchesWritesProblem(groupName, projectName, refsFil
 		return []Branch{}, false
 	}
 
-	fmt.Println(urlPath.String())
+	log.Debug().WithStringer("url", urlPath).Message("Get branches URL.")
 
 	projectRefs := struct {
 		Value []ref `json:"value"`

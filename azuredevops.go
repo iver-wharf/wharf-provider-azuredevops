@@ -69,14 +69,12 @@ func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
 	}
 
 	if i.GroupName == "" {
-		fmt.Println("Unable to get due to empty group.")
+		log.Error().Message("Unable to get due to empty group.")
 		err := errors.New("missing required property: group")
 		ginutil.WriteInvalidParamError(c, err, "group",
 			"Unable to import due to empty group.")
 		return
 	}
-
-	fmt.Println("from json: ", i)
 
 	importer := importer.NewAzureImporter(c, &client)
 	token := wharfapi.Token{
@@ -178,9 +176,9 @@ func (m importModule) prCreatedTriggerHandler(c *gin.Context) {
 	}
 
 	if err != nil {
-		fmt.Println("Unable to send trigger to wharf-client: ", err)
-		err = fmt.Errorf("unable to send trigger to wharf-client: %v", err)
-		ginutil.WriteTriggerError(c, err, "Unable to send trigger to Wharf client.")
+		log.Error().WithError(err).Message("Failed to send trigger to wharf-api.")
+		err = fmt.Errorf("unable to send trigger to wharf-api: %w", err)
+		ginutil.WriteTriggerError(c, err, "Unable to send trigger to Wharf API.")
 		return
 	}
 
