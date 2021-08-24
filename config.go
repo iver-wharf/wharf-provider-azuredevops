@@ -38,7 +38,7 @@ type WharfAPIConfig struct {
 	// installation of Wharf, this would include the trailing "/api" in the URL
 	// path.
 	//
-	// Added in v2.1.0.
+	// Added in v1.3.0.
 	URL string
 }
 
@@ -54,7 +54,7 @@ type HTTPConfig struct {
 	// (v3.0.0), the environment variable BIND_ADDRESS, which was added in
 	// v2.0.0, will also set this value.
 	//
-	// Added in v2.1.0.
+	// Added in v1.3.0
 	BindAddress string
 }
 
@@ -66,7 +66,7 @@ type CORSConfig struct {
 	// (v3.0.0), the environment variable ALLOW_CORS, which was added in v0.6.0,
 	// when set to "YES" will then set this value to true.
 	//
-	// Added in v2.1.0.
+	// Added in v1.3.0
 	AllowAllOrigins bool
 }
 
@@ -77,7 +77,7 @@ type CertConfig struct {
 	// use in addition to the certificates from the system
 	// (such as from /etc/ssl/certs/).
 	//
-	// Added in v2.1.0.
+	// Added in v1.3.0
 	CertsFile string
 }
 
