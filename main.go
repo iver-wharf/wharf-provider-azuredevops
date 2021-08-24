@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 
@@ -37,7 +36,7 @@ func main() {
 		os.Exit(1)
 	}
 	if config, err = loadConfig(); err != nil {
-		fmt.Println("Failed to read config:", err)
+		log.Error().WithError(err).Message("Failed to read config.")
 		os.Exit(1)
 	}
 
