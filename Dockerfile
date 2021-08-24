@@ -9,6 +9,7 @@ COPY . /src
 ARG BUILD_VERSION="local docker"
 ARG BUILD_GIT_COMMIT="HEAD"
 ARG BUILD_REF="0"
+ARG BUILD_DATE=""
 RUN deploy/update-version.sh version.yaml \
 		&& make swag \
 		&& CGO_ENABLED=0 go build -o main
