@@ -1,7 +1,7 @@
 FROM golang:1.16.5 AS build
 WORKDIR /src
 ENV GO111MODULE=on
-RUN go get -u github.com/swaggo/swag/cmd/swag@v1.7.0
+RUN go get -u github.com/swaggo/swag/cmd/swag@v1.7.1
 COPY go.mod go.sum ./
 RUN go mod download
 
