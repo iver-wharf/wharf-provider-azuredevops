@@ -9,6 +9,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/logger"
+	"github.com/iver-wharf/wharf-core/pkg/logger/consolepretty"
 	"github.com/iver-wharf/wharf-provider-azuredevops/docs"
 	"github.com/iver-wharf/wharf-provider-azuredevops/internal/httputils"
 	swaggerFiles "github.com/swaggo/files"
@@ -27,6 +28,8 @@ var log = logger.NewScoped("WHARF-PROVIDER-AZUREDEVOPS")
 // @contact.email wharf@iver.se
 // @basePath /import
 func main() {
+	logger.AddOutput(logger.LevelDebug, consolepretty.Default)
+
 	var (
 		config Config
 		err    error
