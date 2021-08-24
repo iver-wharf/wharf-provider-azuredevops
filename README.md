@@ -17,6 +17,12 @@ dev.azure.com is not well tested.
 
 - Azure DevOps REST API accessed using good'ol `net/http` and `encoding/json`
 
+## Configuring
+
+The wharf-provider-azuredevops program can be configured via environment
+variables and through optional config files. See the docs on the `Config` type
+over at: <https://pkg.go.dev/github.com/iver-wharf/wharf-provider-azuredevops#Config>
+
 ## Development
 
 1. Install Go 1.16 or later: <https://golang.org/>

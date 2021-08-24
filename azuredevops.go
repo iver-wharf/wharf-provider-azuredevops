@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -16,6 +15,15 @@ import (
 	"github.com/iver-wharf/wharf-provider-azuredevops/internal/azureapi"
 	"github.com/iver-wharf/wharf-provider-azuredevops/internal/importer"
 )
+
+type importModule struct {
+	config *Config
+}
+
+func (m importModule) register(r gin.IRouter) {
+	r.POST("/import/azuredevops", m.runAzureDevOpsHandler)
+	r.POST("/import/azuredevops/triggers/:projectid/pr/created", m.prCreatedTriggerHandler)
+}
 
 type importBody struct {
 	// used in refresh only
@@ -44,11 +52,11 @@ type importBody struct {
 // @Failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @Failure 502 {object} problem.Response "Bad gateway"
 // @Router /azuredevops [post]
-func runAzureDevOpsHandler(c *gin.Context) {
+func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	client := wharfapi.Client{
-		ApiUrl:     os.Getenv("WHARF_API_URL"),
+		ApiUrl:     m.config.API.URL,
 		AuthHeader: c.GetHeader("Authorization"),
 	}
 
@@ -113,7 +121,7 @@ func runAzureDevOpsHandler(c *gin.Context) {
 // @Failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @Failure 502 {object} problem.Response "Bad gateway"
 // @Router /azuredevops/triggers/{projectid}/pr/created [post]
-func prCreatedTriggerHandler(c *gin.Context) {
+func (m importModule) prCreatedTriggerHandler(c *gin.Context) {
 	const eventTypePullRequest string = "git.pullrequest.created"
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
@@ -148,7 +156,7 @@ func prCreatedTriggerHandler(c *gin.Context) {
 	}
 
 	client := wharfapi.Client{
-		ApiUrl:     os.Getenv("WHARF_API_URL"),
+		ApiUrl:     m.config.API.URL,
 		AuthHeader: c.GetHeader("Authorization"),
 	}
 
@@ -165,8 +173,8 @@ func prCreatedTriggerHandler(c *gin.Context) {
 	if authErr, ok := err.(*wharfapi.AuthError); ok {
 		ginutil.WriteUnauthorizedError(c, authErr,
 			"Failed to authenticate to the Wharf API. The Authorization header was "+
-			"missing or is invalid.")
-			return
+				"missing or is invalid.")
+		return
 	}
 
 	if err != nil {
