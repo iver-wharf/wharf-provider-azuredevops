@@ -213,7 +213,7 @@ func (i azureImporter) postBranchesToWharfWritesProblem(groupName string, projec
 }
 
 func (i azureImporter) getTokenByIDWritesProblem(tokenID uint) (wharfapi.Token, bool) {
-	token, err := i.wharf.GetTokenById(tokenID)
+	token, err := i.wharf.GetTokenByID(tokenID)
 	if err != nil || token.TokenID == 0 {
 		log.Error().WithError(err).WithUint("tokenId", token.TokenID).Message("Unable to get token.")
 		ginutil.WriteAPIClientReadError(i.c, err,
@@ -259,7 +259,7 @@ func (i azureImporter) getOrPostTokenWritesProblem(token wharfapi.Token) (wharfa
 func (i azureImporter) getOrPostProviderWritesProblem(provider wharfapi.Provider) (wharfapi.Provider, bool) {
 	var err error
 	if provider.ProviderID != 0 {
-		provider, err = i.wharf.GetProviderById(provider.ProviderID)
+		provider, err = i.wharf.GetProviderByID(provider.ProviderID)
 		if err != nil || provider.ProviderID == 0 {
 			log.Error().WithError(err).Message("Unable to get provider.")
 			ginutil.WriteAPIClientReadError(i.c, err,
