@@ -60,7 +60,9 @@ type HTTPConfig struct {
 
 // CORSConfig holds settings for the HTTP server's CORS settings.
 type CORSConfig struct {
-	// AllowAllOrigins enables all
+	// AllowAllOrigins enables CORS and allows all hostnames and URLs in the
+	// HTTP request origins when set to true. Practically speaking, this
+	// results in the HTTP header "Access-Control-Allow-Origin" set to "*".
 	//
 	// For backward compatibility, that may be removed in the next major release
 	// (v3.0.0), the environment variable ALLOW_CORS, which was added in v0.6.0,
