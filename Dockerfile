@@ -1,7 +1,7 @@
 FROM golang:1.16.5 AS build
 WORKDIR /src
 ENV GO111MODULE=on
-RUN go get -u github.com/swaggo/swag/cmd/swag@v1.7.0
+RUN go get -u github.com/swaggo/swag/cmd/swag@v1.7.1
 COPY go.mod go.sum ./
 RUN go mod download
 
@@ -9,6 +9,7 @@ COPY . /src
 ARG BUILD_VERSION="local docker"
 ARG BUILD_GIT_COMMIT="HEAD"
 ARG BUILD_REF="0"
+ARG BUILD_DATE=""
 RUN deploy/update-version.sh version.yaml \
 		&& make swag \
 		&& CGO_ENABLED=0 go build -o main

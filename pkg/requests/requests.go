@@ -6,7 +6,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+
+	"github.com/iver-wharf/wharf-core/pkg/logger"
 )
+
+var log = logger.NewScoped("REQUESTS")
 
 // GetUnmarshalJSON invokes a HTTP request with basic auth.
 // On success the response body will be unmarshalled as JSON.
@@ -53,7 +57,7 @@ func getBodyFromRequest(user string, token string, urlPath *url.URL) ([]byte, er
 
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println(err)
+		log.Error().WithError(err).WithStringer("url", urlPath).Message("Failed to read HTTP response body.")
 		return []byte{}, err
 	}
 

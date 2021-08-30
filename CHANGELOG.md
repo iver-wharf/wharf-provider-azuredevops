@@ -17,10 +17,20 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Changed to return IETF RFC-7807 compatible problem responses on failures
   instead of solely JSON-formatted strings. (#14)
 
-- Updated wharf-core from v0.0.0 -> v1.0.0. (#14)
+- Updated wharf-core from v0.0.0 -> v1.1.0. (#14, #23)
 
 - Added Makefile to simplify building and developing the project locally.
-  (#21, #22)
+  (#21, #22, #23)
+
+- Added logging and custom exit code when app fails to bind the IP address and
+  port. (#23)
+
+- Added configs via wharf-core/pkg/config. Now supports both environment vars
+  and YAML config files. (#23)
+
+- Added possibility to load self-signed certs into the Go `http.DefaultClient`
+  via the new config `ca.certsFile` or environment variable
+  `WHARF_CA_CERTSFILE`, on top of the system's/OS's cert store. (#23)
 
 ## v1.2.0 (2021-07-12)
 

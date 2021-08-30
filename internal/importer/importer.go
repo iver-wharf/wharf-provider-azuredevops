@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-api-client-go/pkg/wharfapi"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
+	"github.com/iver-wharf/wharf-core/pkg/logger"
 	"github.com/iver-wharf/wharf-provider-azuredevops/internal/azureapi"
 )
 
@@ -17,6 +18,8 @@ const (
 	apiProviderName         = "azuredevops"
 	buildDefinitionFileName = ".wharf-ci.yml"
 )
+
+var log = logger.NewScoped("IMPORTER")
 
 // Importer is an interface for importing project data from a remote provider to
 // the Wharf API.
@@ -49,16 +52,22 @@ func (i azureImporter) InitWritesProblem(token wharfapi.Token, provider wharfapi
 	var ok bool
 	i.token, ok = i.getOrPostTokenWritesProblem(token)
 	if !ok {
-		fmt.Println("Unable to get or create token.")
+		log.Error().Message("Failed to get or create token.")
 		return false
 	}
-	fmt.Println("Token from db: ", i.token)
+	log.Debug().
+		WithUint("id", i.token.TokenID).
+		Message("Token from DB.")
 
 	i.provider, ok = i.getOrPostProviderWritesProblem(provider)
 	if !ok {
 		return false
 	}
-	fmt.Println("Provider from db: ", i.provider)
+	log.Debug().
+		WithUint("id", i.provider.ProviderID).
+		WithString("name", i.provider.Name).
+		WithString("url", i.provider.URL).
+		Message("Provider from DB.")
 
 	i.wharf = &client
 
@@ -69,11 +78,11 @@ func (i azureImporter) InitWritesProblem(token wharfapi.Token, provider wharfapi
 	}
 
 	i.azure = &azureapi.Client{
-		Context:  c,
-		BaseURL:  i.provider.URL,
+		Context:       c,
+		BaseURL:       i.provider.URL,
 		BaseURLParsed: urlParsed,
-		UserName: i.token.UserName,
-		Token:    i.token.Token,
+		UserName:      i.token.UserName,
+		Token:         i.token.Token,
 	}
 
 	return true
@@ -118,13 +127,17 @@ func NewAzureImporter(c *gin.Context, client *wharfapi.Client) Importer {
 func (i azureImporter) putProjectToWharfWithBranchesWritesProblem(groupName string, project azureapi.Project) bool {
 	projectInDB, ok := i.putProjectToWharfWritesProblem(groupName, project)
 	if !ok {
-		fmt.Printf("Unable to import project %q", project.Name)
+		log.Error().
+			WithStringf("project", "%s/%s", groupName, project.Name).
+			Message("Failed to import project.")
 		return false
 	}
 
 	ok = i.postBranchesToWharfWritesProblem(groupName, project, projectInDB)
 	if !ok {
-		fmt.Printf("Unable to import branches from project %q", project.Name)
+		log.Error().
+			WithStringf("project", "%s/%s", groupName, project.Name).
+			Message("Failed to import branches for project.")
 		return false
 	}
 
@@ -139,7 +152,10 @@ func (i azureImporter) putProjectToWharfWritesProblem(groupName string, project 
 
 	gitURL, err := i.constructGitURL(groupName, project.Name)
 	if err != nil {
-		fmt.Println("Unable to construct git url ", err)
+		log.Error().
+			WithError(err).
+			WithStringf("project", "%s/%s", groupName, project.Name).
+			Message("Failed to construct Git URL.")
 		ginutil.WriteComposingProviderDataError(i.c, err,
 			fmt.Sprintf("Unable to construct git url for project %q in group %q", project.Name, groupName))
 		return wharfapi.Project{}, false
@@ -155,7 +171,10 @@ func (i azureImporter) putProjectToWharfWritesProblem(groupName string, project 
 		GitURL:          gitURL})
 
 	if err != nil {
-		fmt.Println("Unable to put project: ", err)
+		log.Error().
+			WithError(err).
+			WithStringf("project", "%s/%s", groupName, project.Name).
+			Message("Unable to create project.")
 		ginutil.WriteAPIClientWriteError(i.c, err,
 			fmt.Sprintf("Unable to import project %q from group %q at url %q.",
 				project.Name, groupName, gitURL))
@@ -184,7 +203,7 @@ func (i azureImporter) postBranchesToWharfWritesProblem(groupName string, projec
 			TokenID:   i.token.TokenID,
 		})
 		if err != nil {
-			fmt.Println("Unable to post branch: ", err)
+			log.Error().WithError(err).WithString("branch", branch.Name).Message("Unable to create branch.")
 			ginutil.WriteAPIClientWriteError(i.c, err, fmt.Sprintf("Unable to import branch %q", branch.Name))
 			return false
 		}
@@ -196,7 +215,7 @@ func (i azureImporter) postBranchesToWharfWritesProblem(groupName string, projec
 func (i azureImporter) getTokenByIDWritesProblem(tokenID uint) (wharfapi.Token, bool) {
 	token, err := i.wharf.GetTokenById(tokenID)
 	if err != nil || token.TokenID == 0 {
-		fmt.Printf("Unable to get token. %+v", err)
+		log.Error().WithError(err).WithUint("tokenId", token.TokenID).Message("Unable to get token.")
 		ginutil.WriteAPIClientReadError(i.c, err,
 			fmt.Sprintf("Unable to get token by ID %d.", tokenID))
 		return wharfapi.Token{}, false
@@ -227,7 +246,7 @@ func (i azureImporter) getOrPostTokenWritesProblem(token wharfapi.Token) (wharfa
 				Token:    token.Token,
 				UserName: token.UserName})
 			if err != nil {
-				fmt.Println("Unable to post token: ", err)
+				log.Error().WithError(err).Message("Unable to create token.")
 				ginutil.WriteAPIClientWriteError(i.c, err, "Unable to get existing token or create new token.")
 				return wharfapi.Token{}, false
 			}
@@ -242,7 +261,7 @@ func (i azureImporter) getOrPostProviderWritesProblem(provider wharfapi.Provider
 	if provider.ProviderID != 0 {
 		provider, err = i.wharf.GetProviderById(provider.ProviderID)
 		if err != nil || provider.ProviderID == 0 {
-			fmt.Printf("Unable to get provider. %+v", err)
+			log.Error().WithError(err).Message("Unable to get provider.")
 			ginutil.WriteAPIClientReadError(i.c, err,
 				fmt.Sprintf("Unable to get provider by ID %d", provider.ProviderID))
 			return wharfapi.Provider{}, false
@@ -260,7 +279,7 @@ func (i azureImporter) getOrPostProviderWritesProblem(provider wharfapi.Provider
 					URL:     provider.URL,
 					TokenID: i.token.TokenID})
 			if err != nil {
-				fmt.Println("Unable to post provider: ", err)
+				log.Error().WithError(err).Message("Unable to create provider.")
 				ginutil.WriteAPIClientWriteError(i.c, err,
 					fmt.Sprintf("Unable to get or create provider from %q.", provider.URL))
 				return wharfapi.Provider{}, false
@@ -275,7 +294,7 @@ func (i azureImporter) constructGitURL(groupName, projectName string) (string, e
 	providerURL, err := url.Parse(i.provider.URL)
 
 	if err != nil {
-		fmt.Println("Unable to parse provider url: ", err)
+		log.Error().WithError(err).WithString("url", i.provider.URL).Message("Unable to parse provider URL.")
 		return "", err
 	}
 
