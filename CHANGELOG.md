@@ -28,6 +28,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Added configs via wharf-core/pkg/config. Now supports both environment vars
   and YAML config files. (#23)
 
+- Added possibility to load self-signed certs into the Go `http.DefaultClient`
+  via the new config `ca.certsFile` or environment variable
+  `WHARF_CA_CERTSFILE`, on top of the system's/OS's cert store. (#23)
+
 ## v1.2.0 (2021-07-12)
 
 - Added environment variable `BIND_ADDRESS` for setting bind address and port,
