@@ -32,6 +32,9 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   via the new config `ca.certsFile` or environment variable
   `WHARF_CA_CERTSFILE`, on top of the system's/OS's cert store. (#23)
 
+- Added support for the TZ environment variable (setting timezones ex.
+  `"Europe/Stockholm"`) through the tzdata package. (#20)
+
 ## v1.2.0 (2021-07-12)
 
 - Added environment variable `BIND_ADDRESS` for setting bind address and port,
