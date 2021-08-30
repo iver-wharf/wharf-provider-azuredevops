@@ -56,7 +56,7 @@ func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	client := wharfapi.Client{
-		ApiUrl:     m.config.API.URL,
+		APIURL:     m.config.API.URL,
 		AuthHeader: c.GetHeader("Authorization"),
 	}
 
@@ -78,10 +78,9 @@ func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
 
 	importer := importer.NewAzureImporter(c, &client)
 	token := wharfapi.Token{
-		TokenID:    i.TokenID,
-		Token:      i.Token,
-		UserName:   i.UserName,
-		ProviderID: i.ProviderID}
+		TokenID:  i.TokenID,
+		Token:    i.Token,
+		UserName: i.UserName}
 	provider := wharfapi.Provider{
 		ProviderID: i.ProviderID,
 		Name:       i.ProviderName,
@@ -154,7 +153,7 @@ func (m importModule) prCreatedTriggerHandler(c *gin.Context) {
 	}
 
 	client := wharfapi.Client{
-		ApiUrl:     m.config.API.URL,
+		APIURL:     m.config.API.URL,
 		AuthHeader: c.GetHeader("Authorization"),
 	}
 

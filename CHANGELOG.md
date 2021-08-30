@@ -17,7 +17,11 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Changed to return IETF RFC-7807 compatible problem responses on failures
   instead of solely JSON-formatted strings. (#14)
 
-- Updated wharf-core from v0.0.0 -> v1.1.0. (#14, #23)
+- Changed version of `github.com/iver-wharf/wharf-core` from v0.0.0 -> v1.1.0.
+  (#14, #23)
+
+- Changed version of `github.com/iver-wharf/wharf-api-client-go`
+  from v1.2.0 -> v1.3.1. (#26)
 
 - Added Makefile to simplify building and developing the project locally.
   (#21, #22, #23)
