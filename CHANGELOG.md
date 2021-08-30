@@ -32,6 +32,11 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   via the new config `ca.certsFile` or environment variable
   `WHARF_CA_CERTSFILE`, on top of the system's/OS's cert store. (#23)
 
+- Removed `internal/httputils`, which was moved to `wharf-core/pkg/cacertutil`.
+  (#28)
+
+- Added dependency on `wharf-core/pkg/cacertutil`. (#28)
+
 ## v1.2.0 (2021-07-12)
 
 - Added environment variable `BIND_ADDRESS` for setting bind address and port,
