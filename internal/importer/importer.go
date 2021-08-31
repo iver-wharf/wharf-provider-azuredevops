@@ -30,12 +30,15 @@ type Importer interface {
 	// InitWritesProblem gets/creates the specified token and provider from the Wharf API and
 	// initializes the AzureAPI client.
 	InitWritesProblem(token wharfapi.Token, provider wharfapi.Provider, c *gin.Context, client wharfapi.Client) bool
-	// ImportProjectInGroupWritesProblem retrieves a project from Azure DevOps and imports it
-	// into the Wharf API database.
-	ImportProjectInGroupWritesProblem(groupName, projectName string) bool
-	// ImportAllProjectsInGroupWritesProblem retrieves all projects from an Azure DevOps group
-	// and imports it into the Wharf API database.
-	ImportAllProjectsInGroupWritesProblem(groupName string) bool
+	// ImportRepositoryWritesProblem imports a given Azure DevOps repository
+	// into Wharf.
+	ImportRepositoryWritesProblem(orgName, projectNameOrID, repoNameOrID string) bool
+	// ImportProjectWritesProblem imports all Azure DevOps repositories from a
+	// given Azure DevOps project into Wharf.
+	ImportProjectWritesProblem(orgName, projectNameOrID string) bool
+	// ImportOrganizationWritesProblem imports all Azure DevOps repositories
+	// from all projects found in an Azure DevOps organization into Wharf.
+	ImportOrganizationWritesProblem(orgName string) bool
 }
 
 type azureImporter struct {
@@ -46,6 +49,14 @@ type azureImporter struct {
 	token wharfapi.Token
 	// retrieved from database
 	provider wharfapi.Provider
+}
+
+// NewAzureImporter creates a new azureImporter.
+func NewAzureImporter(c *gin.Context, client *wharfapi.Client) Importer {
+	return azureImporter{
+		c:     c,
+		wharf: client,
+	}
 }
 
 func (i azureImporter) InitWritesProblem(token wharfapi.Token, provider wharfapi.Provider, c *gin.Context, client wharfapi.Client) bool {
@@ -88,19 +99,33 @@ func (i azureImporter) InitWritesProblem(token wharfapi.Token, provider wharfapi
 	return true
 }
 
-func (i azureImporter) ImportProjectInGroupWritesProblem(groupName, projectName string) bool {
+func (i azureImporter) ImportRepositoryWritesProblem(orgName, projectNameOrID, repoNameOrID string) bool {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	project, ok := i.azure.GetProjectWritesProblem(groupName, projectName)
+
+	repo, ok := i.azure.GetRepositoryWritesProblem(orgName, projectNameOrID, repoNameOrID)
 	if !ok {
 		return false
 	}
 
-	i.putProjectToWharfWithBranchesWritesProblem(groupName, project)
+	return i.importKnownRepositoryWritesProblem(orgName, repo)
+}
 
+func (i azureImporter) ImportProjectWritesProblem(orgName, projectNameOrID string) bool {
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	repos, ok := i.azure.GetRepositoriesWritesProblem(orgName, projectNameOrID)
+	if !ok {
+		return false
+	}
+	for _, repo := range repos {
+		ok := i.importKnownRepositoryWritesProblem(orgName, repo)
+		if !ok {
+			return false
+		}
+	}
 	return true
 }
 
-func (i azureImporter) ImportAllProjectsInGroupWritesProblem(groupName string) bool {
+func (i azureImporter) ImportOrganizationWritesProblem(groupName string) bool {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	projects, ok := i.azure.GetProjectsWritesProblem(groupName)
 	if !ok {
@@ -108,105 +133,81 @@ func (i azureImporter) ImportAllProjectsInGroupWritesProblem(groupName string) b
 	}
 
 	for _, project := range projects {
-		if ok := i.putProjectToWharfWithBranchesWritesProblem(groupName, project); !ok {
+		ok := i.ImportProjectWritesProblem(groupName, project.Name)
+		if !ok {
 			return false
 		}
 	}
-
 	return true
 }
 
-// NewAzureImporter creates a new azureImporter.
-func NewAzureImporter(c *gin.Context, client *wharfapi.Client) Importer {
-	return azureImporter{
-		c:     c,
-		wharf: client,
-	}
-}
-
-func (i azureImporter) putProjectToWharfWithBranchesWritesProblem(groupName string, project azureapi.Project) bool {
-	projectInDB, ok := i.putProjectToWharfWritesProblem(groupName, project)
+func (i azureImporter) importKnownRepositoryWritesProblem(orgName string, repo azureapi.Repository) bool {
+	buildDef, ok := i.azure.GetFileWritesProblem(orgName, repo.Project.Name, repo.Name, buildDefinitionFileName)
 	if !ok {
-		log.Error().
-			WithStringf("project", "%s/%s", groupName, project.Name).
-			Message("Failed to import project.")
 		return false
 	}
 
-	ok = i.postBranchesToWharfWritesProblem(groupName, project, projectInDB)
+	branches, ok := i.azure.GetRepositoryBranchesWritesProblem(orgName, repo.Project.Name, repo.Name)
 	if !ok {
-		log.Error().
-			WithStringf("project", "%s/%s", groupName, project.Name).
-			Message("Failed to import branches for project.")
 		return false
 	}
 
-	return true
+	wharfProject, ok := i.importRepositoryWritesProblem(orgName, repo, buildDef)
+	if !ok {
+		return false
+	}
+
+	ok = i.importBranchesWritesProblem(repo.DefaultBranchRef, branches, wharfProject.ProjectID)
+
+	return ok
 }
 
-func (i azureImporter) putProjectToWharfWritesProblem(groupName string, project azureapi.Project) (wharfapi.Project, bool) {
-	buildDefinitionStr, ok := i.azure.GetFileWritesProblem(groupName, project.Name, buildDefinitionFileName)
-	if !ok {
-		return wharfapi.Project{}, false
-	}
-
-	gitURL, err := i.constructGitURL(groupName, project.Name)
-	if err != nil {
-		log.Error().
-			WithError(err).
-			WithStringf("project", "%s/%s", groupName, project.Name).
-			Message("Failed to construct Git URL.")
-		ginutil.WriteComposingProviderDataError(i.c, err,
-			fmt.Sprintf("Unable to construct git url for project %q in group %q", project.Name, groupName))
-		return wharfapi.Project{}, false
-	}
-
+func (i azureImporter) importRepositoryWritesProblem(orgName string, repo azureapi.Repository, buildDef string) (wharfapi.Project, bool) {
+	// TODO: Try to find project by name "{orgName}/{repo.Project.Name}" first
 	projectInDB, err := i.wharf.PutProject(wharfapi.Project{
-		Name:            project.Name,
+		Name:            repo.Name,
 		TokenID:         i.token.TokenID,
-		GroupName:       groupName,
-		BuildDefinition: buildDefinitionStr,
-		Description:     project.Description,
+		GroupName:       fmt.Sprintf("%s/%s", orgName, repo.Project.Name),
+		BuildDefinition: buildDef,
+		Description:     repo.Project.Description,
 		ProviderID:      i.provider.ProviderID,
-		GitURL:          gitURL})
+		GitURL:          repo.SSHURL})
 
 	if err != nil {
 		log.Error().
 			WithError(err).
-			WithStringf("project", "%s/%s", groupName, project.Name).
+			WithString("org", orgName).
+			WithString("project", repo.Project.Name).
+			WithString("repo", repo.Name).
 			Message("Unable to create project.")
 		ginutil.WriteAPIClientWriteError(i.c, err,
-			fmt.Sprintf("Unable to import project %q from group %q at url %q.",
-				project.Name, groupName, gitURL))
+			fmt.Sprintf("Unable to import repository %q from project %q in organization %q.",
+				repo.Name, repo.Project.Name, orgName))
 		return wharfapi.Project{}, false
 	}
 
 	return projectInDB, true
 }
 
-func (i azureImporter) postBranchesToWharfWritesProblem(groupName string, project azureapi.Project, projectInDB wharfapi.Project) bool {
-	repository, ok := i.azure.GetRepositoryWritesProblem(groupName, project)
-	if !ok {
-		return false
-	}
-
-	projectBranches, ok := i.azure.GetProjectBranchesWritesProblem(groupName, project.Name, "heads/")
-	if !ok {
-		return false
-	}
-
-	for _, branch := range projectBranches {
-		_, err := i.wharf.PutBranch(wharfapi.Branch{
+func (i azureImporter) importBranchesWritesProblem(defaultBranchRef string, branches []azureapi.Branch, wharfProjectID uint) bool {
+	wharfBranches := make([]wharfapi.Branch, len(branches))
+	for idx, branch := range branches {
+		wharfBranches[idx] = wharfapi.Branch{
 			Name:      branch.Name,
-			ProjectID: projectInDB.ProjectID,
-			Default:   branch.Ref == repository.DefaultBranch,
+			ProjectID: wharfProjectID,
+			Default:   branch.Ref == defaultBranchRef,
 			TokenID:   i.token.TokenID,
-		})
-		if err != nil {
-			log.Error().WithError(err).WithString("branch", branch.Name).Message("Unable to create branch.")
-			ginutil.WriteAPIClientWriteError(i.c, err, fmt.Sprintf("Unable to import branch %q", branch.Name))
-			return false
 		}
+	}
+
+	if _, err := i.wharf.PutBranches(wharfBranches); err != nil {
+		log.Error().
+			WithError(err).
+			WithInt("branchesCount", len(branches)).
+			WithUint("projectId", wharfProjectID).
+			Message("Unable to replace branches for Wharf project.")
+		ginutil.WriteAPIClientWriteError(i.c, err, fmt.Sprintf("Unable to replace branches for Wharf project with ID %d.", wharfProjectID))
+		return false
 	}
 
 	return true
@@ -288,17 +289,4 @@ func (i azureImporter) getOrPostProviderWritesProblem(provider wharfapi.Provider
 	}
 
 	return provider, true
-}
-
-func (i azureImporter) constructGitURL(groupName, projectName string) (string, error) {
-	providerURL, err := url.Parse(i.provider.URL)
-
-	if err != nil {
-		log.Error().WithError(err).WithString("url", i.provider.URL).Message("Unable to parse provider URL.")
-		return "", err
-	}
-
-	const sshPort = 22
-	gitURL := fmt.Sprintf("git@%s:%d/%s/%s/_git/%s", providerURL.Host, sshPort, groupName, projectName, projectName)
-	return gitURL, nil
 }

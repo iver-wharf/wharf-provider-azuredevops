@@ -93,10 +93,14 @@ func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
 		return
 	}
 
-	if i.ProjectName != "" {
-		ok = importer.ImportProjectInGroupWritesProblem(i.GroupName, i.ProjectName)
-	} else {
-		ok = importer.ImportAllProjectsInGroupWritesProblem(i.GroupName)
+	azureOrg, azureProj, azureRepo := parseRepoRefParams(i.GroupName, i.ProjectName)
+	switch {
+	case azureProj == "":
+		ok = importer.ImportOrganizationWritesProblem(azureOrg)
+	case azureRepo == "":
+		ok = importer.ImportProjectWritesProblem(azureOrg, azureProj)
+	default:
+		ok = importer.ImportRepositoryWritesProblem(azureOrg, azureProj, azureRepo)
 	}
 
 	if !ok {
@@ -104,6 +108,20 @@ func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
 	}
 
 	c.Status(http.StatusCreated)
+}
+
+func parseRepoRefParams(wharfGroupName, wharfProjectName string) (azureOrgName, azureProjectName, azureRepoName string) {
+	slashIndex := strings.IndexRune(wharfGroupName, '/')
+	if slashIndex == -1 {
+		azureOrgName = wharfGroupName
+		azureProjectName = wharfProjectName
+		azureRepoName = ""
+		return
+	}
+	azureOrgName = wharfGroupName[:slashIndex]
+	azureProjectName = wharfGroupName[slashIndex+1:]
+	azureRepoName = wharfProjectName
+	return
 }
 
 // prCreatedTriggerHandler godoc
