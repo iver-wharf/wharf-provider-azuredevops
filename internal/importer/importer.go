@@ -163,15 +163,7 @@ func (i azureImporter) importKnownRepositoryWritesProblem(orgName string, repo a
 }
 
 func (i azureImporter) importRepositoryWritesProblem(orgName string, repo azureapi.Repository, buildDef string) (wharfapi.Project, bool) {
-	// TODO: Try to find project by name "{orgName}/{repo.Project.Name}" first
-	projectInDB, err := i.wharf.PutProject(wharfapi.Project{
-		Name:            repo.Name,
-		TokenID:         i.token.TokenID,
-		GroupName:       fmt.Sprintf("%s/%s", orgName, repo.Project.Name),
-		BuildDefinition: buildDef,
-		Description:     repo.Project.Description,
-		ProviderID:      i.provider.ProviderID,
-		GitURL:          repo.SSHURL})
+	projectInDB, err := i.createOrUpdateWharfProject(orgName, repo, buildDef)
 
 	if err != nil {
 		log.Error().
@@ -211,6 +203,40 @@ func (i azureImporter) importBranchesWritesProblem(defaultBranchRef string, bran
 	}
 
 	return true
+}
+
+// createOrUpdateWharfProject tries to create a new Wharf project via the
+// Wharf API.
+//
+// This contains backward compatibility by updating an existing Wharf project
+// if found that was previously named using the v1 format:
+// 	Group:   "{orgName}"
+// 	Project: "{repo.Project.Name}"
+//
+// But now they need to be renamed to:
+// 	Group:   "{orgName}/{repo.Project.Name}"
+// 	Project: "{repo.Name}"
+//
+// This relies on the "cannot-change-group" being removed, as was done in
+// wharf-api v4.2.0: https://github.com/iver-wharf/wharf-api/pull/55
+func (i azureImporter) createOrUpdateWharfProject(orgName string, repo azureapi.Repository, buildDef string) (wharfapi.Project, error) {
+	var project wharfapi.Project
+	searchResults, err := i.wharf.SearchProject(wharfapi.Project{
+		Name:       repo.Project.Name,
+		GroupName:  orgName,
+		ProviderID: i.provider.ProviderID,
+	})
+	if err != nil && len(searchResults) > 0 {
+		project = searchResults[0]
+	}
+	project.Name = repo.Name
+	project.TokenID = i.token.TokenID
+	project.GroupName = fmt.Sprintf("%s/%s", orgName, repo.Project.Name)
+	project.BuildDefinition = buildDef
+	project.Description = repo.Project.Description
+	project.ProviderID = i.provider.ProviderID
+	project.GitURL = repo.SSHURL
+	return i.wharf.PutProject(project)
 }
 
 func (i azureImporter) getTokenByIDWritesProblem(tokenID uint) (wharfapi.Token, bool) {
@@ -268,6 +294,7 @@ func (i azureImporter) getOrPostProviderWritesProblem(provider wharfapi.Provider
 			return wharfapi.Provider{}, false
 		}
 	} else {
+		// TODO: `provider` gets overridden, even if err == nil
 		provider, err = i.wharf.GetProvider(
 			apiProviderName,
 			provider.URL,
