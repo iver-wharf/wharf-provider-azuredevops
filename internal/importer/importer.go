@@ -53,13 +53,13 @@ type azureImporter struct {
 
 // NewAzureImporter creates a new azureImporter.
 func NewAzureImporter(c *gin.Context, client *wharfapi.Client) Importer {
-	return azureImporter{
+	return &azureImporter{
 		c:     c,
 		wharf: client,
 	}
 }
 
-func (i azureImporter) InitWritesProblem(token wharfapi.Token, provider wharfapi.Provider, c *gin.Context, client wharfapi.Client) bool {
+func (i *azureImporter) InitWritesProblem(token wharfapi.Token, provider wharfapi.Provider, c *gin.Context, client wharfapi.Client) bool {
 	var ok bool
 	i.token, ok = i.getOrPostTokenWritesProblem(token)
 	if !ok {
@@ -70,7 +70,9 @@ func (i azureImporter) InitWritesProblem(token wharfapi.Token, provider wharfapi
 		WithUint("id", i.token.TokenID).
 		Message("Token from DB.")
 
-	i.provider, ok = i.getOrPostProviderWritesProblem(provider)
+	var providerWithTokenRef = provider
+	providerWithTokenRef.TokenID = i.token.TokenID
+	i.provider, ok = i.getOrPostProviderWritesProblem(providerWithTokenRef)
 	if !ok {
 		return false
 	}
@@ -84,8 +86,9 @@ func (i azureImporter) InitWritesProblem(token wharfapi.Token, provider wharfapi
 
 	urlParsed, err := url.Parse(i.provider.URL)
 	if err != nil {
-		ginutil.WriteComposingProviderDataError(i.c, err,
-			fmt.Sprintf("Unable parse the provider URL %q", i.provider.URL))
+		ginutil.WriteInvalidParamError(i.c, err, "provider.url",
+			fmt.Sprintf("Unable parse the provider URL %q.", i.provider.URL))
+		return false
 	}
 
 	i.azure = &azureapi.Client{
@@ -99,7 +102,7 @@ func (i azureImporter) InitWritesProblem(token wharfapi.Token, provider wharfapi
 	return true
 }
 
-func (i azureImporter) ImportRepositoryWritesProblem(orgName, projectNameOrID, repoNameOrID string) bool {
+func (i *azureImporter) ImportRepositoryWritesProblem(orgName, projectNameOrID, repoNameOrID string) bool {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	repo, ok := i.azure.GetRepositoryWritesProblem(orgName, projectNameOrID, repoNameOrID)
@@ -110,7 +113,7 @@ func (i azureImporter) ImportRepositoryWritesProblem(orgName, projectNameOrID, r
 	return i.importKnownRepositoryWritesProblem(orgName, repo)
 }
 
-func (i azureImporter) ImportProjectWritesProblem(orgName, projectNameOrID string) bool {
+func (i *azureImporter) ImportProjectWritesProblem(orgName, projectNameOrID string) bool {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	repos, ok := i.azure.GetRepositoriesWritesProblem(orgName, projectNameOrID)
 	if !ok {
@@ -125,7 +128,7 @@ func (i azureImporter) ImportProjectWritesProblem(orgName, projectNameOrID strin
 	return true
 }
 
-func (i azureImporter) ImportOrganizationWritesProblem(groupName string) bool {
+func (i *azureImporter) ImportOrganizationWritesProblem(groupName string) bool {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	projects, ok := i.azure.GetProjectsWritesProblem(groupName)
 	if !ok {
@@ -141,7 +144,7 @@ func (i azureImporter) ImportOrganizationWritesProblem(groupName string) bool {
 	return true
 }
 
-func (i azureImporter) importKnownRepositoryWritesProblem(orgName string, repo azureapi.Repository) bool {
+func (i *azureImporter) importKnownRepositoryWritesProblem(orgName string, repo azureapi.Repository) bool {
 	buildDef, ok := i.azure.GetFileWritesProblem(orgName, repo.Project.Name, repo.Name, buildDefinitionFileName)
 	if !ok {
 		return false
@@ -162,7 +165,7 @@ func (i azureImporter) importKnownRepositoryWritesProblem(orgName string, repo a
 	return ok
 }
 
-func (i azureImporter) importRepositoryWritesProblem(orgName string, repo azureapi.Repository, buildDef string) (wharfapi.Project, bool) {
+func (i *azureImporter) importRepositoryWritesProblem(orgName string, repo azureapi.Repository, buildDef string) (wharfapi.Project, bool) {
 	projectInDB, err := i.createOrUpdateWharfProject(orgName, repo, buildDef)
 
 	if err != nil {
@@ -181,7 +184,7 @@ func (i azureImporter) importRepositoryWritesProblem(orgName string, repo azurea
 	return projectInDB, true
 }
 
-func (i azureImporter) importBranchesWritesProblem(defaultBranchRef string, branches []azureapi.Branch, wharfProjectID uint) bool {
+func (i *azureImporter) importBranchesWritesProblem(defaultBranchRef string, branches []azureapi.Branch, wharfProjectID uint) bool {
 	wharfBranches := make([]wharfapi.Branch, len(branches))
 	for idx, branch := range branches {
 		wharfBranches[idx] = wharfapi.Branch{
@@ -219,7 +222,7 @@ func (i azureImporter) importBranchesWritesProblem(defaultBranchRef string, bran
 //
 // This relies on the "cannot-change-group" being removed, as was done in
 // wharf-api v4.2.0: https://github.com/iver-wharf/wharf-api/pull/55
-func (i azureImporter) createOrUpdateWharfProject(orgName string, repo azureapi.Repository, buildDef string) (wharfapi.Project, error) {
+func (i *azureImporter) createOrUpdateWharfProject(orgName string, repo azureapi.Repository, buildDef string) (wharfapi.Project, error) {
 	var project wharfapi.Project
 	searchResults, err := i.wharf.SearchProject(wharfapi.Project{
 		Name:       repo.Project.Name,
@@ -239,81 +242,76 @@ func (i azureImporter) createOrUpdateWharfProject(orgName string, repo azureapi.
 	return i.wharf.PutProject(project)
 }
 
-func (i azureImporter) getTokenByIDWritesProblem(tokenID uint) (wharfapi.Token, bool) {
-	token, err := i.wharf.GetTokenByID(tokenID)
-	if err != nil || token.TokenID == 0 {
-		log.Error().WithError(err).WithUint("tokenId", token.TokenID).Message("Unable to get token.")
-		ginutil.WriteAPIClientReadError(i.c, err,
-			fmt.Sprintf("Unable to get token by ID %d.", tokenID))
-		return wharfapi.Token{}, false
-	}
-
-	return token, true
-}
-
-func (i azureImporter) getOrPostTokenWritesProblem(token wharfapi.Token) (wharfapi.Token, bool) {
-	if token.UserName == "" && token.TokenID == 0 {
-		err := errors.New("both token and user were omitted")
-		ginutil.WriteInvalidParamError(i.c, err, "user",
-			"Unable to import when both user and token are omitted.")
-		return wharfapi.Token{}, false
-	}
-
+func (i *azureImporter) getOrPostTokenWritesProblem(token wharfapi.Token) (wharfapi.Token, bool) {
 	if token.TokenID != 0 {
-		var ok bool
-		token, ok = i.getTokenByIDWritesProblem(token.TokenID)
-		if !ok {
+		dbToken, err := i.wharf.GetTokenByID(token.TokenID)
+		if err != nil {
+			log.Error().
+				WithError(err).
+				WithUint("tokenId", token.TokenID).
+				Message("Unable to get token by ID.")
+			ginutil.WriteAPIClientReadError(i.c, err,
+				fmt.Sprintf("Unable to get token by ID %d.", token.TokenID))
 			return wharfapi.Token{}, false
 		}
-	} else {
-		var err error
-		token, err = i.wharf.GetToken(token.Token, token.UserName)
-		if err != nil || token.TokenID == 0 {
-			token, err = i.wharf.PostToken(wharfapi.Token{
-				Token:    token.Token,
-				UserName: token.UserName})
-			if err != nil {
-				log.Error().WithError(err).Message("Unable to create token.")
-				ginutil.WriteAPIClientWriteError(i.c, err, "Unable to get existing token or create new token.")
-				return wharfapi.Token{}, false
-			}
-		}
+		return dbToken, true
 	}
 
-	return token, true
+	if token.UserName == "" && token.Token == "" {
+		err := errors.New("both token and user were empty")
+		ginutil.WriteInvalidParamError(i.c, err, "token",
+			"Unable to create token when both user and token are empty.")
+		return wharfapi.Token{}, false
+	}
+
+	searchResults, err := i.wharf.SearchToken(token)
+	if err != nil || len(searchResults) == 0 {
+		log.Warn().
+			WithError(err).
+			WithInt("tokensFound", len(searchResults)).
+			Message("Unable to get token. Will try to create one instead.")
+		createdToken, err := i.wharf.PostToken(token)
+		if err != nil {
+			log.Error().WithError(err).Message("Unable to create token.")
+			ginutil.WriteAPIClientWriteError(i.c, err, "Unable to create new token.")
+			return wharfapi.Token{}, false
+		}
+		return createdToken, true
+	}
+
+	return searchResults[0], true
 }
 
-func (i azureImporter) getOrPostProviderWritesProblem(provider wharfapi.Provider) (wharfapi.Provider, bool) {
-	var err error
+func (i *azureImporter) getOrPostProviderWritesProblem(provider wharfapi.Provider) (wharfapi.Provider, bool) {
 	if provider.ProviderID != 0 {
-		provider, err = i.wharf.GetProviderByID(provider.ProviderID)
-		if err != nil || provider.ProviderID == 0 {
-			log.Error().WithError(err).Message("Unable to get provider.")
+		dbProvider, err := i.wharf.GetProviderByID(provider.ProviderID)
+		if err != nil {
+			log.Error().
+				WithError(err).
+				WithUint("providerId", provider.ProviderID).
+				Message("Unable to get provider by ID.")
 			ginutil.WriteAPIClientReadError(i.c, err,
 				fmt.Sprintf("Unable to get provider by ID %d", provider.ProviderID))
 			return wharfapi.Provider{}, false
 		}
-	} else {
-		// TODO: `provider` gets overridden, even if err == nil
-		provider, err = i.wharf.GetProvider(
-			apiProviderName,
-			provider.URL,
-			provider.UploadURL,
-			i.token.TokenID)
-		if err != nil || provider.ProviderID == 0 {
-			provider, err = i.wharf.PostProvider(
-				wharfapi.Provider{
-					Name:    apiProviderName,
-					URL:     provider.URL,
-					TokenID: i.token.TokenID})
-			if err != nil {
-				log.Error().WithError(err).Message("Unable to create provider.")
-				ginutil.WriteAPIClientWriteError(i.c, err,
-					fmt.Sprintf("Unable to get or create provider from %q.", provider.URL))
-				return wharfapi.Provider{}, false
-			}
-		}
+		return dbProvider, true
 	}
 
-	return provider, true
+	searchResults, err := i.wharf.SearchProvider(provider)
+	if err != nil || len(searchResults) == 0 {
+		log.Warn().
+			WithError(err).
+			WithInt("providersFound", len(searchResults)).
+			Message("Unable to get provider. Will try to create one instead.")
+		createdProvider, err := i.wharf.PostProvider(provider)
+		if err != nil {
+			log.Error().WithError(err).Message("Unable to create provider.")
+			ginutil.WriteAPIClientWriteError(i.c, err,
+				fmt.Sprintf("Unable to get or create provider from %q.", provider.URL))
+			return wharfapi.Provider{}, false
+		}
+		return createdProvider, true
+	}
+
+	return searchResults[0], true
 }

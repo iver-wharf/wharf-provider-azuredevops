@@ -216,7 +216,7 @@ func (c *Client) GetRepositoryBranchesWritesProblem(orgName, projectNameOrID, re
 
 func (c *Client) newGetRepository(orgName, projectNameOrID, repoNameOrID string) (*url.URL, error) {
 	urlPath := *c.BaseURLParsed
-	urlPath.Path = fmt.Sprintf("%s/%s/_apis/repositories/%s", orgName, projectNameOrID, repoNameOrID)
+	urlPath.Path = fmt.Sprintf("%s/%s/_apis/git/repositories/%s", orgName, projectNameOrID, repoNameOrID)
 
 	q := url.Values{}
 	q.Add("api-version", "5.0")
@@ -227,7 +227,7 @@ func (c *Client) newGetRepository(orgName, projectNameOrID, repoNameOrID string)
 
 func (c *Client) newGetRepositories(orgName, projectNameOrID string) (*url.URL, error) {
 	urlPath := *c.BaseURLParsed
-	urlPath.Path = fmt.Sprintf("%s/%s/_apis/repositories", orgName, projectNameOrID)
+	urlPath.Path = fmt.Sprintf("%s/%s/_apis/git/repositories", orgName, projectNameOrID)
 
 	q := url.Values{}
 	q.Add("api-version", "5.0")
@@ -238,7 +238,7 @@ func (c *Client) newGetRepositories(orgName, projectNameOrID string) (*url.URL, 
 
 func (c *Client) newGetFile(orgName, projectNameOrID, repoNameOrID, filePath string) (*url.URL, error) {
 	urlPath := *c.BaseURLParsed
-	urlPath.Path = fmt.Sprintf("%s/%s/_apis/repositories/%s/items",
+	urlPath.Path = fmt.Sprintf("%s/%s/_apis/git/repositories/%s/items",
 		orgName, projectNameOrID, repoNameOrID)
 
 	q := url.Values{}
@@ -272,7 +272,7 @@ func (c *Client) newGetProjects(orgName string) (*url.URL, error) {
 
 func (c *Client) newGetGitRefs(orgName, projectNameOrID, repoNameOrID, refsFilter string) (*url.URL, error) {
 	urlPath := *c.BaseURLParsed
-	urlPath.Path = fmt.Sprintf("%s/%s/_apis/repositories/%s/refs",
+	urlPath.Path = fmt.Sprintf("%s/%s/_apis/git/repositories/%s/refs",
 		orgName, projectNameOrID, repoNameOrID)
 
 	q := url.Values{}
