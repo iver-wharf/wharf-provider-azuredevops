@@ -113,16 +113,13 @@ func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
 }
 
 func parseRepoRefParams(wharfGroupName, wharfProjectName string) (azureOrgName, azureProjectName, azureRepoName string) {
-	slashIndex := strings.IndexRune(wharfGroupName, '/')
-	if slashIndex == -1 {
-		azureOrgName = wharfGroupName
+	azureOrgName, azureProjectName = splitStringOnceRune(wharfGroupName, '/')
+	if azureProjectName == "" {
 		azureProjectName = wharfProjectName
 		azureRepoName = ""
-		return
+	} else {
+		azureRepoName = wharfProjectName
 	}
-	azureOrgName = wharfGroupName[:slashIndex]
-	azureProjectName = wharfGroupName[slashIndex+1:]
-	azureRepoName = wharfProjectName
 	return
 }
 
