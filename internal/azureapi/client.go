@@ -1,7 +1,9 @@
 package azureapi
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 
@@ -152,7 +154,17 @@ func (c *Client) GetFileWritesProblem(orgName, projectNameOrID, repoNameOrID, fi
 	log.Debug().WithStringer("url", urlPath).Message("Get file URL.")
 
 	fileContents, err := requests.GetAsString(c.UserName, c.Token, urlPath)
-	if err != nil {
+	var non2xxErr requests.Non2xxStatusError
+	if errors.As(err, &non2xxErr) && non2xxErr.StatusCode == http.StatusNotFound {
+		log.Debug().
+			WithError(err).
+			WithString("org", orgName).
+			WithString("project", projectNameOrID).
+			WithString("repo", repoNameOrID).
+			WithString("file", filePath).
+			Message("File not found in project.")
+		return "", true
+	} else if err != nil {
 		log.Error().
 			WithError(err).
 			WithString("org", orgName).
