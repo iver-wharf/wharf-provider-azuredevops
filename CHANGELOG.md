@@ -39,6 +39,14 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   accordingly. Recommended to use the built-in variables `REPO_GROUP` and
   `REPO_NAME` throughout your build pipeline instead (see: <https://iver-wharf.github.io/#/usage-wharfyml/variables/built-in-variables?id=repo_group>).
 
+- BREAKING: Added a config for skipping TLS certificate chain verification to
+  make it opt-in, where it always skipped the TLS certificates before. (#33)
+
+  While skipping this verification is heavily discouraged, if you truly do
+  rely on it then this can be re-enabled by setting either the YAML
+  configuration value `ca.insecureSkipVerify` or the environment variable
+  `WHARF_CA_INSECURESKIPVERIFY` to `true`.
+
 - Fixed Git SSH URL when importing from <https://dev.azure.com>. (#31)
 
 - Fixed duplicate token and provider creation in wharf-api. It will now reuse

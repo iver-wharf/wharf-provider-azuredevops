@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/http"
@@ -55,8 +54,6 @@ type importBody struct {
 // @Failure 502 {object} problem.Response "Bad gateway"
 // @Router /azuredevops [post]
 func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-
 	client := wharfapi.Client{
 		APIURL:     m.config.API.URL,
 		AuthHeader: c.GetHeader("Authorization"),
@@ -137,8 +134,6 @@ func parseRepoRefParams(wharfGroupName, wharfProjectName string) (azureOrgName, 
 // @Router /azuredevops/triggers/{projectid}/pr/created [post]
 func (m importModule) prCreatedTriggerHandler(c *gin.Context) {
 	const eventTypePullRequest string = "git.pullrequest.created"
-
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	t := azureapi.PullRequestEvent{}
 	if err := c.ShouldBindJSON(&t); err != nil {
