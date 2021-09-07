@@ -18,7 +18,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   as its own Wharf project, compared to before where it imported each
   Azure DevOps project as its own Wharf project. (#31)
 
-- BREAKING: Changed name format of imported Wharf projects. 
+- BREAKING: Changed name format of imported Wharf projects.
 
   - Before v2.0.0:
 
@@ -47,8 +47,8 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Changed to return IETF RFC-7807 compatible problem responses on failures
   instead of solely JSON-formatted strings. (#14)
 
-- Changed version of `github.com/iver-wharf/wharf-core` from v0.0.0 -> v1.1.0.
-  (#14, #23)
+- Changed version of `github.com/iver-wharf/wharf-core` from v0.0.0 -> v1.2.0.
+  (#14, #23, #28)
 
 - Changed version of `github.com/iver-wharf/wharf-api-client-go`
   from v1.2.0 -> v1.3.1. (#26)
@@ -68,9 +68,6 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Added support for the TZ environment variable (setting timezones ex.
   `"Europe/Stockholm"`) through the tzdata package. (#20)
-
-- Changed version of `github.com/iver-wharf/wharf-core`
-  from v1.1.0 -> v1.2.0. (#28)
 
 - Removed `internal/httputils`, which was moved to `wharf-core/pkg/cacertutil`.
   (#28)
