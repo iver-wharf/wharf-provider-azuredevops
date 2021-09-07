@@ -16,6 +16,10 @@ import (
 	"github.com/iver-wharf/wharf-provider-azuredevops/internal/importer"
 )
 
+const (
+	providerName = "azuredevops"
+)
+
 type importModule struct {
 	config *Config
 }
@@ -34,8 +38,6 @@ type importBody struct {
 	UploadURL string `json:"uploadUrl" example:""`
 	// used in refresh only
 	ProviderID uint `json:"providerId" example:"0"`
-	// azuredevops, gitlab or github
-	ProviderName string `json:"provider" example:"gitlab"`
 	// used in refresh only
 	ProjectID   uint   `json:"projectId" example:"0"`
 	ProjectName string `json:"project" example:"sample project name"`
@@ -83,7 +85,7 @@ func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
 		UserName: i.UserName}
 	provider := wharfapi.Provider{
 		ProviderID: i.ProviderID,
-		Name:       i.ProviderName,
+		Name:       providerName,
 		URL:        i.URL,
 		UploadURL:  i.UploadURL,
 		TokenID:    i.TokenID}
@@ -93,10 +95,14 @@ func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
 		return
 	}
 
-	if i.ProjectName != "" {
-		ok = importer.ImportProjectInGroupWritesProblem(i.GroupName, i.ProjectName)
-	} else {
-		ok = importer.ImportAllProjectsInGroupWritesProblem(i.GroupName)
+	azureOrg, azureProj, azureRepo := parseRepoRefParams(i.GroupName, i.ProjectName)
+	switch {
+	case azureProj == "":
+		ok = importer.ImportOrganizationWritesProblem(azureOrg)
+	case azureRepo == "":
+		ok = importer.ImportProjectWritesProblem(azureOrg, azureProj)
+	default:
+		ok = importer.ImportRepositoryWritesProblem(azureOrg, azureProj, azureRepo)
 	}
 
 	if !ok {
@@ -104,6 +110,17 @@ func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
 	}
 
 	c.Status(http.StatusCreated)
+}
+
+func parseRepoRefParams(wharfGroupName, wharfProjectName string) (azureOrgName, azureProjectName, azureRepoName string) {
+	azureOrgName, azureProjectName = splitStringOnceRune(wharfGroupName, '/')
+	if azureProjectName == "" {
+		azureProjectName = wharfProjectName
+		azureRepoName = ""
+	} else {
+		azureRepoName = wharfProjectName
+	}
+	return
 }
 
 // prCreatedTriggerHandler godoc

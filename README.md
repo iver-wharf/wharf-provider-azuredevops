@@ -6,6 +6,17 @@ Import Wharf projects from Azure DevOps repositories. Mainly focused on
 importing from self hosted Azure DevOps instances, importing from
 dev.azure.com is not well tested.
 
+## Token scopes
+
+When generating a Personal Access Token (PAT) to let wharf-provider-azuredevops
+talk to Azure DevOps, you need the following permission scopes associated with
+the token:
+
+- **Code**\
+  *Source code, repositories, pull requests, and notifications*
+
+  - [x] Read
+
 ## Components
 
 - HTTP API using the [gin-gonic/gin](https://github.com/gin-gonic/gin)
