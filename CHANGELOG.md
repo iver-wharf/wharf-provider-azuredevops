@@ -51,7 +51,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   (#14, #23, #28)
 
 - Changed version of `github.com/iver-wharf/wharf-api-client-go`
-  from v1.2.0 -> v1.3.1. (#26)
+  from v1.2.0 -> v1.4.0. (#26, #28)
 
 - Added Makefile to simplify building and developing the project locally.
   (#21, #22, #23)
@@ -69,10 +69,8 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Added support for the TZ environment variable (setting timezones ex.
   `"Europe/Stockholm"`) through the tzdata package. (#20)
 
-- Removed `internal/httputils`, which was moved to `wharf-core/pkg/cacertutil`.
-  (#28)
-
-- Added dependency on `wharf-core/pkg/cacertutil`. (#28)
+- Removed `internal/httputils`, which was moved to
+  `github.com/iver-wharf/wharf-core/pkg/cacertutil`. (#28)
 
 ## v1.2.0 (2021-07-12)
 
