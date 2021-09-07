@@ -12,7 +12,37 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
-## v1.3.0 (WIP)
+## v2.0.0 (WIP)
+
+- BREAKING: Changed import procedure to import each Azure DevOps Git repository
+  as its own Wharf project, compared to before where it imported each
+  Azure DevOps project as its own Wharf project. (#31)
+
+- BREAKING: Changed name format of imported Wharf projects. 
+
+  - Before v2.0.0:
+
+    - Wharf group name: `{azure org name}`
+    - Wharf project name: `{azure project name}`
+
+  - Since v2.0.0:
+
+    - Wharf group name: `{azure org name}/{azure project name}`
+    - Wharf project name: `{azure Git repo name}`
+
+  There are migrations in place to try and rename Wharf projects imported via
+  wharf-provider-azuredevops before v2.0.0, but that also requires the use of
+  wharf-api v4.2.0 or higher (see: <https://github.com/iver-wharf/wharf-api/pull/55>).
+
+  This may break your builds! If you rely on the Wharf group or project names
+  in your `.wharf-ci.yml` build pipeline then you need to update those
+  accordingly. Recommended to use the built-in variables `REPO_GROUP` and
+  `REPO_NAME` throughout your build pipeline instead (see: <https://iver-wharf.github.io/#/usage-wharfyml/variables/built-in-variables?id=repo_group>).
+
+- Fixed Git SSH URL when importing from <https://dev.azure.com>. (#31)
+
+- Fixed duplicate token and provider creation in wharf-api. It will now reuse
+  existing tokens and providers from the wharf-api appropriately. (#31)
 
 - Changed to return IETF RFC-7807 compatible problem responses on failures
   instead of solely JSON-formatted strings. (#14)

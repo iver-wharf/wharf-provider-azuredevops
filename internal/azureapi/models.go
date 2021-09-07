@@ -29,14 +29,14 @@ type PullRequestEvent struct {
 
 // Repository represents repository data retrieved from Azure DevOps.
 type Repository struct {
-	ID            string  `json:"id"`
-	Name          string  `json:"name"`
-	URL           string  `json:"url"`
-	Project       Project `json:"project"`
-	DefaultBranch string  `json:"defaultBranch"`
-	Size          int64   `json:"size"`
-	RemoteURL     string  `json:"remoteUrl"`
-	SSHURL        string  `json:"sshUrl"`
+	ID               string  `json:"id"`
+	Name             string  `json:"name"`
+	URL              string  `json:"url"`
+	Project          Project `json:"project"`
+	DefaultBranchRef string  `json:"defaultBranch"`
+	Size             int64   `json:"size"`
+	RemoteURL        string  `json:"remoteUrl"`
+	SSHURL           string  `json:"sshUrl"`
 }
 
 type creator struct {
@@ -46,21 +46,4 @@ type creator struct {
 	UniqueName  string `json:"uniqueName"`
 	ImageURL    string `json:"imageUrl"`
 	Descriptor  string `json:"descriptor"`
-}
-
-type ref struct {
-	ObjectID string  `json:"objectId"`
-	Name     string  `json:"name"`
-	Creator  creator `json:"creator"`
-	URL      string  `json:"url"`
-}
-
-type repositoryResponse struct {
-	Count int          `json:"count"`
-	Value []Repository `json:"value"`
-}
-
-type projectResponse struct {
-	Count int       `json:"count"`
-	Value []Project `json:"value"`
 }

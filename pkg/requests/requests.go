@@ -39,26 +39,26 @@ func getBodyFromRequest(user string, token string, urlPath *url.URL) ([]byte, er
 	url := urlPath.String()
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return []byte{}, err
+		return []byte{}, fmt.Errorf("unable to get: %w", err)
 	}
 
 	req.SetBasicAuth(user, token)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return []byte{}, err
+		return []byte{}, fmt.Errorf("unable to get: %w", err)
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return []byte{}, fmt.Errorf("unable to get: %s", resp.Status)
+		return []byte{}, fmt.Errorf("unable to get: %w", newNon2xxStatusError(resp))
 	}
 
 	bodyBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Error().WithError(err).WithStringer("url", urlPath).Message("Failed to read HTTP response body.")
-		return []byte{}, err
+		return []byte{}, fmt.Errorf("unable to get: %w", err)
 	}
 
 	return bodyBytes, nil
