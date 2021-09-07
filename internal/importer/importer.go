@@ -1,10 +1,8 @@
 package importer
 
 import (
-	"crypto/tls"
 	"errors"
 	"fmt"
-	"net/http"
 	"net/url"
 
 	"github.com/gin-gonic/gin"
@@ -103,8 +101,6 @@ func (i *azureImporter) InitWritesProblem(token wharfapi.Token, provider wharfap
 }
 
 func (i *azureImporter) ImportRepositoryWritesProblem(orgName, projectNameOrID, repoNameOrID string) bool {
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-
 	repo, ok := i.azure.GetRepositoryWritesProblem(orgName, projectNameOrID, repoNameOrID)
 	if !ok {
 		return false
@@ -114,7 +110,6 @@ func (i *azureImporter) ImportRepositoryWritesProblem(orgName, projectNameOrID, 
 }
 
 func (i *azureImporter) ImportProjectWritesProblem(orgName, projectNameOrID string) bool {
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	repos, ok := i.azure.GetRepositoriesWritesProblem(orgName, projectNameOrID)
 	if !ok {
 		return false
@@ -129,7 +124,6 @@ func (i *azureImporter) ImportProjectWritesProblem(orgName, projectNameOrID stri
 }
 
 func (i *azureImporter) ImportOrganizationWritesProblem(groupName string) bool {
-	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	projects, ok := i.azure.GetProjectsWritesProblem(groupName)
 	if !ok {
 		return false
