@@ -38,6 +38,9 @@ type Importer interface {
 	// ImportOrganizationWritesProblem imports all Azure DevOps repositories
 	// from all projects found in an Azure DevOps organization into Wharf.
 	ImportOrganizationWritesProblem(orgName string) bool
+	// RefreshRepositoryWritesProblem refreshes an Azure DevOps repository using
+	// the Wharf project ID for that repository.
+	RefreshRepositoryWritesProblem(projectID uint) bool
 }
 
 type azureImporter struct {
@@ -250,6 +253,7 @@ func (i *azureImporter) createOrUpdateWharfProject(orgName string, repo azureapi
 	project.Description = repo.Project.Description
 	project.ProviderID = i.provider.ProviderID
 	project.GitURL = repo.SSHURL
+	project.RemoteProjectID = repo.ID
 	return i.wharf.PutProject(project)
 }
 

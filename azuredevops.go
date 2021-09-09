@@ -10,9 +10,11 @@ import (
 	"github.com/iver-wharf/wharf-api-client-go/pkg/wharfapi"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/problem"
+
 	_ "github.com/iver-wharf/wharf-provider-azuredevops/docs"
 	"github.com/iver-wharf/wharf-provider-azuredevops/internal/azureapi"
 	"github.com/iver-wharf/wharf-provider-azuredevops/internal/importer"
+	"github.com/iver-wharf/wharf-provider-azuredevops/internal/parseutil"
 )
 
 const (
@@ -93,7 +95,7 @@ func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
 		return
 	}
 
-	azureOrg, azureProj, azureRepo := importer.ParseRepoRefParams(i.GroupName, i.ProjectName)
+	azureOrg, azureProj, azureRepo := parseutil.ParseRepoRefParams(i.GroupName, i.ProjectName)
 	switch {
 	case i.ProjectID != 0:
 		ok = importer.RefreshRepositoryWritesProblem(i.ProjectID)

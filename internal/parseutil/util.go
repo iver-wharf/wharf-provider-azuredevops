@@ -7,12 +7,21 @@ import "strings"
 //
 // Example 1:
 //    Input:
-//           groupName="iver-wharf/wharf"
+//           groupName="iver/wharf"
 //           projectName="provider-azuredevops"
 //   Output:
-//           orgName="iver-wharf"
+//           orgName="iver"
 //       projectName="wharf"
 //          repoName="provider-azuredevops"
+//
+// Example 2:
+//    Input:
+//           groupName="iver"
+//           projectName="wharf"
+//   Output:
+//           orgName="iver"
+//       projectName="wharf"
+//          repoName=""
 func ParseRepoRefParams(wharfGroupName, wharfProjectName string) (azureOrgName, azureProjectName, azureRepoName string) {
 	azureOrgName, azureProjectName = splitStringOnceRune(wharfGroupName, '/')
 	if azureProjectName == "" {
