@@ -12,7 +12,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
-## v2.0.0 (WIP)
+## v2.0.0 (2021-09-09)
 
 - BREAKING: Changed import procedure to import each Azure DevOps Git repository
   as its own Wharf project, compared to before where it imported each
