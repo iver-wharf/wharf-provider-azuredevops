@@ -12,6 +12,17 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
+## v2.1.0 (WIP)
+
+- Changed version of `github.com/iver-wharf/wharf-api-client-go`
+  from v1.3.1 -> v1.4.0. (#28)
+
+- Changed version of `github.com/iver-wharf/wharf-core` from v1.1.0 -> v1.2.0.
+  (#28)
+
+- Removed `internal/httputils`, which was moved to
+  `github.com/iver-wharf/wharf-core/pkg/cacertutil`. (#28)
+
 ## v2.0.0 (WIP)
 
 - BREAKING: Changed import procedure to import each Azure DevOps Git repository
@@ -47,11 +58,11 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Changed to return IETF RFC-7807 compatible problem responses on failures
   instead of solely JSON-formatted strings. (#14)
 
-- Changed version of `github.com/iver-wharf/wharf-core` from v0.0.0 -> v1.2.0.
-  (#14, #23, #28)
+- Changed version of `github.com/iver-wharf/wharf-core` from v0.0.0 -> v1.1.0.
+  (#14, #23)
 
 - Changed version of `github.com/iver-wharf/wharf-api-client-go`
-  from v1.2.0 -> v1.4.0. (#26, #28)
+  from v1.2.0 -> v1.3.1. (#26)
 
 - Added Makefile to simplify building and developing the project locally.
   (#21, #22, #23)
@@ -68,9 +79,6 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Added support for the TZ environment variable (setting timezones ex.
   `"Europe/Stockholm"`) through the tzdata package. (#20)
-
-- Removed `internal/httputils`, which was moved to
-  `github.com/iver-wharf/wharf-core/pkg/cacertutil`. (#28)
 
 ## v1.2.0 (2021-07-12)
 
