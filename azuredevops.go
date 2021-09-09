@@ -38,9 +38,10 @@ type importBody struct {
 	// used in refresh only
 	ProviderID uint `json:"providerId" example:"0"`
 	// used in refresh only
-	ProjectID   uint   `json:"projectId" example:"0"`
-	ProjectName string `json:"project" example:"sample project name"`
-	GroupName   string `json:"group" example:"default"`
+	ProjectID       uint   `json:"projectId" example:"0"`
+	ProjectName     string `json:"project" example:"sample project name"`
+	GroupName       string `json:"group" example:"default"`
+	RemoteProjectID string `json:"remoteProjectId"`
 }
 
 // runAzureDevOpsHandler godoc
@@ -92,8 +93,10 @@ func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
 		return
 	}
 
-	azureOrg, azureProj, azureRepo := parseRepoRefParams(i.GroupName, i.ProjectName)
+	azureOrg, azureProj, azureRepo := importer.ParseRepoRefParams(i.GroupName, i.ProjectName)
 	switch {
+	case i.ProjectID != 0:
+		ok = importer.RefreshRepositoryWritesProblem(i.ProjectID)
 	case azureProj == "":
 		ok = importer.ImportOrganizationWritesProblem(azureOrg)
 	case azureRepo == "":
@@ -107,17 +110,6 @@ func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
 	}
 
 	c.Status(http.StatusCreated)
-}
-
-func parseRepoRefParams(wharfGroupName, wharfProjectName string) (azureOrgName, azureProjectName, azureRepoName string) {
-	azureOrgName, azureProjectName = splitStringOnceRune(wharfGroupName, '/')
-	if azureProjectName == "" {
-		azureProjectName = wharfProjectName
-		azureRepoName = ""
-	} else {
-		azureRepoName = wharfProjectName
-	}
-	return
 }
 
 // prCreatedTriggerHandler godoc

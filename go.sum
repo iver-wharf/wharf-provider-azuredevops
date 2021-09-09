@@ -198,6 +198,8 @@ github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANyt
 github.com/influxdata/influxdb1-client v0.0.0-20191209144304-8bf82d3c094d/go.mod h1:qj24IKcXYK6Iy9ceXlo3Tc+vtHo9lIhSX5JddghvEPo=
 github.com/iver-wharf/wharf-api-client-go v1.4.0 h1:P1+r7ltJyYJma2g4nRfat7ugeWd4ktfC6q67KB65TeQ=
 github.com/iver-wharf/wharf-api-client-go v1.4.0/go.mod h1:nv5UChpadYGVvsHhfSw4ss7cOFoTiAJWejzZ+7/23cg=
+github.com/iver-wharf/wharf-api-client-go v1.4.1-0.20210908145508-60fc8c51c560 h1:M0wnrhzrNNxGt7R5Xi+XgrH3VQq0xhJb/8QIZ0ZABl0=
+github.com/iver-wharf/wharf-api-client-go v1.4.1-0.20210908145508-60fc8c51c560/go.mod h1:nv5UChpadYGVvsHhfSw4ss7cOFoTiAJWejzZ+7/23cg=
 github.com/iver-wharf/wharf-core v1.1.0/go.mod h1:dpYtdL52i17Aue7An6mJL9dICeulBDsGZO/PxZYHgrE=
 github.com/iver-wharf/wharf-core v1.2.0 h1:iwtnBh6XbDyb/Z7pAMZMbXNIFM63fp/qS9DChxQ+ukA=
 github.com/iver-wharf/wharf-core v1.2.0/go.mod h1:dpYtdL52i17Aue7An6mJL9dICeulBDsGZO/PxZYHgrE=

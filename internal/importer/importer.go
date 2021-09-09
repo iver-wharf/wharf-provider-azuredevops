@@ -10,6 +10,7 @@ import (
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/logger"
 	"github.com/iver-wharf/wharf-provider-azuredevops/internal/azureapi"
+	"github.com/iver-wharf/wharf-provider-azuredevops/internal/parseutil"
 )
 
 const (
@@ -136,6 +137,22 @@ func (i *azureImporter) ImportOrganizationWritesProblem(groupName string) bool {
 		}
 	}
 	return true
+}
+
+func (i *azureImporter) RefreshRepositoryWritesProblem(projectID uint) bool {
+	project, err := i.wharf.GetProjectByID(projectID)
+	if err != nil {
+		ginutil.WriteAPIClientReadError(i.c, err,
+			fmt.Sprintf("Unable to get project with ID %d from Wharf API.", projectID))
+		return false
+	}
+
+	orgName, projectName, repoNameOrID := parseutil.ParseRepoRefParams(project.GroupName, project.Name)
+	if project.RemoteProjectID != "" {
+		repoNameOrID = project.RemoteProjectID
+	}
+
+	return i.ImportRepositoryWritesProblem(orgName, projectName, repoNameOrID)
 }
 
 func (i *azureImporter) importKnownRepositoryWritesProblem(orgName string, repo azureapi.Repository) bool {
