@@ -81,6 +81,14 @@ type CertConfig struct {
 	//
 	// Added in v1.3.0
 	CertsFile string
+
+	/// InsecureSkipVerify will disable all TLS certificate verification for
+	/// outgoing traffic from the wharf-provider-azuredevops application.
+	///
+	/// This is a major security hole and should be avoided whenever possible.
+	///
+	/// Added in v2.0.0.
+	InsecureSkipVerify bool
 }
 
 // DefaultConfig is the hard-coded default values for wharf-provider-azuredevops's

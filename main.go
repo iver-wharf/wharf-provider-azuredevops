@@ -54,6 +54,18 @@ func main() {
 		http.DefaultClient = client
 	}
 
+	if config.CA.InsecureSkipVerify {
+		transport, ok := http.DefaultTransport.(*http.Transport)
+		if !ok {
+			log.Error().
+				WithStringf("httpTransportType", "%T", http.DefaultClient).
+				Messagef("Failed to cast the HTTP transport to %T when insecurely configuring TLS to skip cert verify.", &http.Transport{})
+			os.Exit(1)
+		}
+		transport.TLSClientConfig.InsecureSkipVerify = true
+		log.Warn().Message("Insecurely configured TLS to skip certificate verification.")
+	}
+
 	gin.DefaultWriter = ginutil.DefaultLoggerWriter
 	gin.DefaultErrorWriter = ginutil.DefaultLoggerWriter
 
