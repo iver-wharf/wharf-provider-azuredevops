@@ -7,6 +7,7 @@ build: swag
 
 docker:
 	docker build . \
+		--pull \
 		-t "quay.io/iver-wharf/wharf-provider-azuredevops:latest" \
 		-t "quay.io/iver-wharf/wharf-provider-azuredevops:$(version)" \
 		--build-arg BUILD_VERSION="$(version)" \
