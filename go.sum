@@ -198,8 +198,9 @@ github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANyt
 github.com/influxdata/influxdb1-client v0.0.0-20191209144304-8bf82d3c094d/go.mod h1:qj24IKcXYK6Iy9ceXlo3Tc+vtHo9lIhSX5JddghvEPo=
 github.com/iver-wharf/wharf-api-client-go v1.4.0 h1:P1+r7ltJyYJma2g4nRfat7ugeWd4ktfC6q67KB65TeQ=
 github.com/iver-wharf/wharf-api-client-go v1.4.0/go.mod h1:nv5UChpadYGVvsHhfSw4ss7cOFoTiAJWejzZ+7/23cg=
-github.com/iver-wharf/wharf-core v1.1.0 h1:vdjW+A8p0GBBcd1sB3vKwpN44t0dBrYfpY+B6ebSMbI=
 github.com/iver-wharf/wharf-core v1.1.0/go.mod h1:dpYtdL52i17Aue7An6mJL9dICeulBDsGZO/PxZYHgrE=
+github.com/iver-wharf/wharf-core v1.2.0 h1:iwtnBh6XbDyb/Z7pAMZMbXNIFM63fp/qS9DChxQ+ukA=
+github.com/iver-wharf/wharf-core v1.2.0/go.mod h1:dpYtdL52i17Aue7An6mJL9dICeulBDsGZO/PxZYHgrE=
 github.com/jackc/chunkreader v1.0.0/go.mod h1:RT6O25fNZIuasFJRyZ4R/Y2BbhasbmZXF9QQ7T3kePo=
 github.com/jackc/chunkreader/v2 v2.0.0/go.mod h1:odVSm741yZoC3dpHEUXIqA9tQRhFrgOHwnPIn9lDKlk=
 github.com/jackc/chunkreader/v2 v2.0.1/go.mod h1:odVSm741yZoC3dpHEUXIqA9tQRhFrgOHwnPIn9lDKlk=

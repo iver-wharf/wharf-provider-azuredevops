@@ -12,6 +12,17 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
+## v2.0.2 (WIP)
+
+- Changed version of `github.com/iver-wharf/wharf-api-client-go`
+  from v1.3.1 -> v1.4.0. (#28)
+
+- Changed version of `github.com/iver-wharf/wharf-core` from v1.1.0 -> v1.2.0.
+  (#28)
+
+- Removed `internal/httputils`, which was moved to
+  `github.com/iver-wharf/wharf-core/pkg/cacertutil`. (#28)
+
 ## v2.0.1 (2021-09-10)
 
 - Changed version of Docker base images, relying on "latest" patch version:
@@ -25,7 +36,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
   as its own Wharf project, compared to before where it imported each
   Azure DevOps project as its own Wharf project. (#31)
 
-- BREAKING: Changed name format of imported Wharf projects. 
+- BREAKING: Changed name format of imported Wharf projects.
 
   - Before v2.0.0:
 

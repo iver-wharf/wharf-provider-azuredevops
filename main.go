@@ -7,11 +7,11 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/gin-contrib/cors"
+	"github.com/iver-wharf/wharf-core/pkg/cacertutil"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/logger"
 	"github.com/iver-wharf/wharf-core/pkg/logger/consolepretty"
 	"github.com/iver-wharf/wharf-provider-azuredevops/docs"
-	"github.com/iver-wharf/wharf-provider-azuredevops/internal/httputils"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
@@ -46,7 +46,7 @@ func main() {
 	docs.SwaggerInfo.Version = AppVersion.Version
 
 	if config.CA.CertsFile != "" {
-		client, err := httputils.NewClientWithCerts(config.CA.CertsFile)
+		client, err := cacertutil.NewHTTPClientWithCerts(config.CA.CertsFile)
 		if err != nil {
 			log.Error().WithError(err).Message("Failed to get net/http.Client with certs.")
 			os.Exit(1)
