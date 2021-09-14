@@ -23,6 +23,13 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Removed `internal/httputils`, which was moved to
   `github.com/iver-wharf/wharf-core/pkg/cacertutil`. (#28)
 
+## v2.0.1 (2021-09-10)
+
+- Changed version of Docker base images, relying on "latest" patch version:
+
+  - Alpine: 3.14.0 -> 3.14 (#35)
+  - Golang: 1.16.5 -> 1.16 (#35)
+
 ## v2.0.0 (2021-09-09)
 
 - BREAKING: Changed import procedure to import each Azure DevOps Git repository
