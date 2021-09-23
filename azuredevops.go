@@ -30,11 +30,10 @@ func (m importModule) register(r gin.IRouter) {
 
 type importBody struct {
 	// used in refresh only
-	TokenID   uint   `json:"tokenId" example:"0"`
-	Token     string `json:"token" example:"sample token"`
-	UserName  string `json:"user" example:"sample user name"`
-	URL       string `json:"url" example:"https://gitlab.local"`
-	UploadURL string `json:"uploadUrl" example:""`
+	TokenID  uint   `json:"tokenId" example:"0"`
+	Token    string `json:"token" example:"sample token"`
+	UserName string `json:"user" example:"sample user name"`
+	URL      string `json:"url" example:"https://gitlab.local"`
 	// used in refresh only
 	ProviderID uint `json:"providerId" example:"0"`
 	// used in refresh only
@@ -84,7 +83,6 @@ func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
 		ProviderID: i.ProviderID,
 		Name:       providerName,
 		URL:        i.URL,
-		UploadURL:  i.UploadURL,
 		TokenID:    i.TokenID}
 
 	ok := importer.InitWritesProblem(token, provider, c, client)
