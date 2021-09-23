@@ -23,6 +23,10 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - Removed `internal/httputils`, which was moved to
   `github.com/iver-wharf/wharf-core/pkg/cacertutil`. (#28)
 
+- Removed `UploadURL` field from the `importBody` struct, and all references to
+  `wharfapi.Provider.UploadURL`, which will be removed in wharf-api v5.0.0 as it
+  did not provide any functionality. (#39)
+
 ## v2.0.1 (2021-09-10)
 
 - Changed version of Docker base images, relying on "latest" patch version:
