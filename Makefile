@@ -5,6 +5,9 @@ build: swag
 	go build .
 	@echo "Built binary found at ./wharf-provider-azuredevops or ./wharf-provider-azuredevops.exe"
 
+test: swag
+	go test -v ./...
+
 docker:
 	docker build . \
 		--pull \
@@ -26,8 +29,19 @@ docker-run:
 serve: swag
 	go run .
 
-swag:
+swag-force:
 	swag init --parseDependency --parseDepth 1
+
+swag:
+ifeq ("$(wildcard docs/docs.go)","")
+	swag init --parseDependency --parseDepth 1
+else
+ifeq ("$(filter $(MAKECMDGOALS),swag-force)","")
+	@echo "-- Skipping 'swag init' because docs/docs.go exists."
+	@echo "-- Run 'make' with additional target 'swag-force' to always run it."
+endif
+endif
+	@# This comment silences warning "make: Nothing to be done for 'swag'."
 
 deps:
 	cd .. && go get -u github.com/swaggo/swag/cmd/swag@v1.7.1
