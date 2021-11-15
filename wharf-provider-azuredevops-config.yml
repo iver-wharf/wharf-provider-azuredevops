@@ -1,0 +1,9 @@
+# See config.go for reference on all config options
+
+api:
+  url: http://localhost:5001
+
+http:
+  bindAddress: :5004
+  cors:
+    allowAllOrigins: true
