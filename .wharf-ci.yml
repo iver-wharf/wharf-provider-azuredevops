@@ -1,9 +1,10 @@
 build:
-  azuredevops:
+  wharf-provider-azuredevops:
     docker:
       file: Dockerfile
-      tag: ${GIT_COMMIT},${GIT_TAG},latest
+      tag: canary
       args:
-        - BUILD_VERSION=${GIT_TAG}
+        - BUILD_VERSION=${GIT_BRANCH}
         - BUILD_GIT_COMMIT=${GIT_COMMIT}
         - BUILD_REF=${BUILD_REF}
+        - REG=${REG_URL}/hub
