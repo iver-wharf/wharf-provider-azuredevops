@@ -1,0 +1,2 @@
+# Handle line endings for docker scripts on Windows
+*.sh text eol=lf
