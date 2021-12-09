@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env sh
 
 VERSION_FILE="${1:?'Version file must be provided'}"
 
