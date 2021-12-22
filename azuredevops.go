@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-api-client-go/pkg/wharfapi"
+	"github.com/iver-wharf/wharf-api/pkg/model/response"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	_ "github.com/iver-wharf/wharf-provider-azuredevops/docs"
@@ -75,11 +76,11 @@ func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
 	}
 
 	importer := importer.NewAzureImporter(c, &client)
-	token := wharfapi.Token{
+	token := response.Token{
 		TokenID:  i.TokenID,
 		Token:    i.Token,
 		UserName: i.UserName}
-	provider := wharfapi.Provider{
+	provider := response.Provider{
 		ProviderID: i.ProviderID,
 		Name:       providerName,
 		URL:        i.URL,
@@ -125,7 +126,7 @@ func parseRepoRefParams(wharfGroupName, wharfProjectName string) (azureOrgName, 
 // @Param projectid path int true "wharf project ID"
 // @Param azureDevOpsPR body azureapi.PullRequestEvent _ "AzureDevOps PR"
 // @Param environment query string true "wharf build environment"
-// @Success 200 {object} wharfapi.ProjectRunResponse "OK"
+// @Success 200 {object} response.BuildReferenceWrapper "OK"
 // @Failure 400 {object} problem.Response "Bad request"
 // @Failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @Failure 502 {object} problem.Response "Bad gateway"
@@ -167,15 +168,12 @@ func (m importModule) prCreatedTriggerHandler(c *gin.Context) {
 		AuthHeader: c.GetHeader("Authorization"),
 	}
 
-	var resp wharfapi.ProjectRunResponse
-	resp, err := client.PostProjectRun(
-		wharfapi.ProjectRun{
-			ProjectID:   projectID,
-			Stage:       "prcreated",
-			Branch:      strings.TrimPrefix(t.Resource.SourceRefName, "refs/heads/"),
-			Environment: environment,
-		},
-	)
+	params := wharfapi.ProjectStartBuild{
+		Stage:       "prcreated",
+		Branch:      strings.TrimPrefix(t.Resource.SourceRefName, "refs/heads/"),
+		Environment: environment,
+	}
+	resp, err := client.StartProjectBuild(projectID, params, nil)
 
 	if authErr, ok := err.(*wharfapi.AuthError); ok {
 		ginutil.WriteUnauthorizedError(c, authErr,
