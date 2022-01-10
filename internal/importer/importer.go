@@ -21,6 +21,33 @@ const (
 
 var log = logger.NewScoped("IMPORTER")
 
+// ReqToken is an alias for request.Token.
+//
+// Meant to increase readability when accessing the field of the same name
+// in request.Token from a TokenData instance.
+type ReqToken = request.Token
+
+// TokenData is a struct combining request.Token with an ID,
+// meant to support both creating and updating behavior with the same
+// struct.
+type TokenData struct {
+	ReqToken
+	ID uint
+}
+
+// ReqProvider is an alias for request.Provider.
+//
+// Here for symmetry with ReqToken.
+type ReqProvider = request.Provider
+
+// ProviderData is a struct combining request.Provider with an ID,
+// meant to support both creating and updating behavior with the same
+// struct.
+type ProviderData struct {
+	ReqProvider
+	ID uint
+}
+
 // Importer is an interface for importing project data from a remote provider to
 // the Wharf API.
 //
@@ -29,7 +56,7 @@ var log = logger.NewScoped("IMPORTER")
 type Importer interface {
 	// InitWritesProblem gets/creates the specified token and provider from the Wharf API and
 	// initializes the AzureAPI client.
-	InitWritesProblem(token response.Token, provider response.Provider, c *gin.Context, client wharfapi.Client) bool
+	InitWritesProblem(tokenData TokenData, providerData ProviderData, c *gin.Context, client wharfapi.Client) bool
 	// ImportRepositoryWritesProblem imports a given Azure DevOps repository
 	// into Wharf.
 	ImportRepositoryWritesProblem(orgName, projectNameOrID, repoNameOrID string) bool
@@ -46,9 +73,9 @@ type azureImporter struct {
 	wharf *wharfapi.Client
 	azure *azureapi.Client
 	// retrieved from database
-	token response.Token
+	resToken response.Token
 	// retrieved from database
-	provider response.Provider
+	resProvider response.Provider
 }
 
 // NewAzureImporter creates a new azureImporter.
@@ -59,44 +86,44 @@ func NewAzureImporter(c *gin.Context, client *wharfapi.Client) Importer {
 	}
 }
 
-func (i *azureImporter) InitWritesProblem(token response.Token, provider response.Provider, c *gin.Context, client wharfapi.Client) bool {
+func (i *azureImporter) InitWritesProblem(tokenData TokenData, providerData ProviderData, c *gin.Context, client wharfapi.Client) bool {
 	var ok bool
-	i.token, ok = i.getOrPostTokenWritesProblem(token)
+	i.resToken, ok = i.getOrPostTokenWritesProblem(tokenData)
 	if !ok {
 		log.Error().Message("Failed to get or create token.")
 		return false
 	}
 	log.Debug().
-		WithUint("id", i.token.TokenID).
+		WithUint("ID", i.resToken.TokenID).
 		Message("Token from DB.")
 
-	var providerWithTokenRef = provider
-	providerWithTokenRef.TokenID = i.token.TokenID
-	i.provider, ok = i.getOrPostProviderWritesProblem(providerWithTokenRef)
+	var providerWithTokenRef = providerData
+	providerWithTokenRef.ID = i.resToken.TokenID
+	i.resProvider, ok = i.getOrPostProviderWritesProblem(providerWithTokenRef)
 	if !ok {
 		return false
 	}
 	log.Debug().
-		WithUint("id", i.provider.ProviderID).
-		WithString("name", string(i.provider.Name)).
-		WithString("url", i.provider.URL).
+		WithUint("ID", i.resProvider.ProviderID).
+		WithString("name", string(i.resProvider.Name)).
+		WithString("url", i.resProvider.URL).
 		Message("Provider from DB.")
 
 	i.wharf = &client
 
-	urlParsed, err := url.Parse(i.provider.URL)
+	urlParsed, err := url.Parse(i.resProvider.URL)
 	if err != nil {
 		ginutil.WriteInvalidParamError(i.c, err, "provider.url",
-			fmt.Sprintf("Unable parse the provider URL %q.", i.provider.URL))
+			fmt.Sprintf("Unable parse the provider URL %q.", i.resProvider.URL))
 		return false
 	}
 
 	i.azure = &azureapi.Client{
 		Context:       c,
-		BaseURL:       i.provider.URL,
+		BaseURL:       i.resProvider.URL,
 		BaseURLParsed: urlParsed,
-		UserName:      i.token.UserName,
-		Token:         i.token.Token,
+		UserName:      i.resToken.UserName,
+		Token:         i.resToken.Token,
 	}
 
 	return true
@@ -222,7 +249,7 @@ func (i *azureImporter) createOrUpdateWharfProject(orgName string, repo azureapi
 	search := wharfapi.ProjectSearch{
 		Name:       &repo.Name,
 		GroupName:  &groupName,
-		ProviderID: &i.provider.ProviderID,
+		ProviderID: &i.resProvider.ProviderID,
 	}
 	searchResults, err := i.wharf.GetProjectList(search)
 	if err != nil {
@@ -238,11 +265,11 @@ func (i *azureImporter) createOrUpdateWharfProject(orgName string, repo azureapi
 		existingProject = searchResults.List[0]
 		updatedProject := request.ProjectUpdate{
 			Name:            repo.Name,
-			TokenID:         i.token.TokenID,
+			TokenID:         i.resToken.TokenID,
 			GroupName:       groupName,
 			BuildDefinition: buildDef,
 			Description:     repo.Project.Description,
-			ProviderID:      i.provider.ProviderID,
+			ProviderID:      i.resProvider.ProviderID,
 			GitURL:          repo.SSHURL,
 		}
 		return i.wharf.UpdateProject(existingProject.ProjectID, updatedProject)
@@ -250,11 +277,11 @@ func (i *azureImporter) createOrUpdateWharfProject(orgName string, repo azureapi
 
 	createdProject, err := i.wharf.CreateProject(request.Project{
 		Name:            repo.Name,
-		TokenID:         i.token.TokenID,
+		TokenID:         i.resToken.TokenID,
 		GroupName:       groupName,
 		BuildDefinition: buildDef,
 		Description:     repo.Project.Description,
-		ProviderID:      i.provider.ProviderID,
+		ProviderID:      i.resProvider.ProviderID,
 		GitURL:          repo.SSHURL,
 		RemoteProjectID: repo.Project.ID,
 	})
@@ -273,22 +300,22 @@ func (i *azureImporter) createOrUpdateWharfProject(orgName string, repo azureapi
 	return createdProject, nil
 }
 
-func (i *azureImporter) getOrPostTokenWritesProblem(token response.Token) (response.Token, bool) {
-	if token.TokenID != 0 {
-		dbToken, err := i.wharf.GetToken(token.TokenID)
+func (i *azureImporter) getOrPostTokenWritesProblem(tokenData TokenData) (response.Token, bool) {
+	if tokenData.ID != 0 {
+		dbToken, err := i.wharf.GetToken(tokenData.ID)
 		if err != nil {
 			log.Error().
 				WithError(err).
-				WithUint("tokenId", token.TokenID).
+				WithUint("ID", tokenData.ID).
 				Message("Unable to get token by ID.")
 			ginutil.WriteAPIClientReadError(i.c, err,
-				fmt.Sprintf("Unable to get token by ID %d.", token.TokenID))
+				fmt.Sprintf("Unable to get token by ID %d.", tokenData.ID))
 			return response.Token{}, false
 		}
 		return dbToken, true
 	}
 
-	if token.UserName == "" && token.Token == "" {
+	if tokenData.UserName == "" && tokenData.Token == "" {
 		err := errors.New("both token and user were empty")
 		ginutil.WriteInvalidParamError(i.c, err, "token",
 			"Unable to create token when both user and token are empty.")
@@ -296,7 +323,7 @@ func (i *azureImporter) getOrPostTokenWritesProblem(token response.Token) (respo
 	}
 
 	search := wharfapi.TokenSearch{
-		UserName: &token.UserName,
+		UserName: &tokenData.UserName,
 	}
 	searchResults, err := i.wharf.GetTokenList(search)
 	if err != nil || len(searchResults.List) == 0 {
@@ -305,9 +332,9 @@ func (i *azureImporter) getOrPostTokenWritesProblem(token response.Token) (respo
 			WithInt("tokensFound", len(searchResults.List)).
 			Message("Unable to get token. Will try to create one instead.")
 		createdToken, err := i.wharf.CreateToken(request.Token{
-			Token:      token.Token,
-			UserName:   token.UserName,
-			ProviderID: i.provider.ProviderID,
+			Token:      tokenData.Token,
+			UserName:   tokenData.UserName,
+			ProviderID: i.resProvider.ProviderID,
 		})
 		if err != nil {
 			log.Error().WithError(err).Message("Unable to create token.")
@@ -320,7 +347,7 @@ func (i *azureImporter) getOrPostTokenWritesProblem(token response.Token) (respo
 	var foundToken response.Token
 	var found bool
 	for _, t := range searchResults.List {
-		if t.Token == token.Token {
+		if t.Token == tokenData.Token {
 			foundToken = t
 			found = true
 			break
@@ -330,25 +357,25 @@ func (i *azureImporter) getOrPostTokenWritesProblem(token response.Token) (respo
 	return foundToken, found
 }
 
-func (i *azureImporter) getOrPostProviderWritesProblem(provider response.Provider) (response.Provider, bool) {
-	if provider.ProviderID != 0 {
-		dbProvider, err := i.wharf.GetProvider(provider.ProviderID)
+func (i *azureImporter) getOrPostProviderWritesProblem(providerData ProviderData) (response.Provider, bool) {
+	if providerData.ID != 0 {
+		dbProvider, err := i.wharf.GetProvider(providerData.ID)
 		if err != nil {
 			log.Error().
 				WithError(err).
-				WithUint("providerId", provider.ProviderID).
+				WithUint("providerId", providerData.ID).
 				Message("Unable to get provider by ID.")
 			ginutil.WriteAPIClientReadError(i.c, err,
-				fmt.Sprintf("Unable to get provider by ID %d", provider.ProviderID))
+				fmt.Sprintf("Unable to get provider by ID %d", providerData.ID))
 			return response.Provider{}, false
 		}
 		return dbProvider, true
 	}
 
-	providerName := string(provider.Name)
+	providerName := string(providerData.Name)
 	search := wharfapi.ProviderSearch{
 		Name: &providerName,
-		URL:  &provider.URL,
+		URL:  &providerData.URL,
 	}
 	searchResults, err := i.wharf.GetProviderList(search)
 	if err != nil || len(searchResults.List) == 0 {
@@ -357,14 +384,14 @@ func (i *azureImporter) getOrPostProviderWritesProblem(provider response.Provide
 			WithInt("providersFound", len(searchResults.List)).
 			Message("Unable to get provider. Will try to create one instead.")
 		createdProvider, err := i.wharf.CreateProvider(request.Provider{
-			Name:    request.ProviderName(provider.Name),
-			URL:     provider.URL,
-			TokenID: provider.TokenID,
+			Name:    request.ProviderName(providerData.Name),
+			URL:     providerData.URL,
+			TokenID: providerData.TokenID,
 		})
 		if err != nil {
 			log.Error().WithError(err).Message("Unable to create provider.")
 			ginutil.WriteAPIClientWriteError(i.c, err,
-				fmt.Sprintf("Unable to get or create provider from %q.", provider.URL))
+				fmt.Sprintf("Unable to get or create provider from %q.", providerData.URL))
 			return response.Provider{}, false
 		}
 		return createdProvider, true
@@ -373,7 +400,7 @@ func (i *azureImporter) getOrPostProviderWritesProblem(provider response.Provide
 	var foundProvider response.Provider
 	var found bool
 	for _, p := range searchResults.List {
-		if p.ProviderID == provider.ProviderID {
+		if p.ProviderID == providerData.ID {
 			foundProvider = p
 			found = true
 			break

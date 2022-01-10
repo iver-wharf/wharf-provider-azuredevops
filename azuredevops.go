@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/iver-wharf/wharf-api-client-go/pkg/wharfapi"
-	"github.com/iver-wharf/wharf-api/pkg/model/response"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	_ "github.com/iver-wharf/wharf-provider-azuredevops/docs"
@@ -75,18 +74,24 @@ func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
 		return
 	}
 
-	importer := importer.NewAzureImporter(c, &client)
-	token := response.Token{
-		TokenID:  i.TokenID,
-		Token:    i.Token,
-		UserName: i.UserName}
-	provider := response.Provider{
-		ProviderID: i.ProviderID,
-		Name:       providerName,
-		URL:        i.URL,
-		TokenID:    i.TokenID}
+	imp := importer.NewAzureImporter(c, &client)
+	tokenData := importer.TokenData{
+		ReqToken: importer.ReqToken{
+			Token:    i.Token,
+			UserName: i.UserName,
+		},
+		ID: i.TokenID,
+	}
+	providerData := importer.ProviderData{
+		ReqProvider: importer.ReqProvider{
+			Name:    providerName,
+			URL:     i.URL,
+			TokenID: i.TokenID,
+		},
+		ID: i.ProviderID,
+	}
 
-	ok := importer.InitWritesProblem(token, provider, c, client)
+	ok := imp.InitWritesProblem(tokenData, providerData, c, client)
 	if !ok {
 		return
 	}
@@ -94,11 +99,11 @@ func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
 	azureOrg, azureProj, azureRepo := parseRepoRefParams(i.GroupName, i.ProjectName)
 	switch {
 	case azureProj == "":
-		ok = importer.ImportOrganizationWritesProblem(azureOrg)
+		ok = imp.ImportOrganizationWritesProblem(azureOrg)
 	case azureRepo == "":
-		ok = importer.ImportProjectWritesProblem(azureOrg, azureProj)
+		ok = imp.ImportProjectWritesProblem(azureOrg, azureProj)
 	default:
-		ok = importer.ImportRepositoryWritesProblem(azureOrg, azureProj, azureRepo)
+		ok = imp.ImportRepositoryWritesProblem(azureOrg, azureProj, azureRepo)
 	}
 
 	if !ok {
