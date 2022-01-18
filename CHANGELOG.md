@@ -15,7 +15,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 ## v3.0.0 (WIP)
 
 - BREAKING: Removed support for `github.com/iver-wharf/wharf-api` v4.2.0 and
-  below.
+  below. (#49)
 
 - Added support for `github.com/iver-wharf/wharf-api` v5.0.0. (#49)
 
