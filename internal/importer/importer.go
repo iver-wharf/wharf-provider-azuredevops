@@ -97,9 +97,9 @@ func (i *azureImporter) InitWritesProblem(tokenData TokenData, providerData Prov
 		WithUint("ID", i.resToken.TokenID).
 		Message("Token from DB.")
 
-	var providerWithTokenRef = providerData
-	providerWithTokenRef.ID = i.resToken.TokenID
-	i.resProvider, ok = i.getOrPostProviderWritesProblem(providerWithTokenRef)
+	var providerWithTokenID = providerData
+	providerWithTokenID.TokenID = i.resToken.TokenID
+	i.resProvider, ok = i.getOrPostProviderWritesProblem(providerWithTokenID)
 	if !ok {
 		return false
 	}
