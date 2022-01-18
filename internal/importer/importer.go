@@ -6,9 +6,9 @@ import (
 	"net/url"
 
 	"github.com/gin-gonic/gin"
+	"github.com/iver-wharf/wharf-api-client-go/v2/pkg/model/request"
+	"github.com/iver-wharf/wharf-api-client-go/v2/pkg/model/response"
 	"github.com/iver-wharf/wharf-api-client-go/v2/pkg/wharfapi"
-	"github.com/iver-wharf/wharf-api/v5/pkg/model/request"
-	"github.com/iver-wharf/wharf-api/v5/pkg/model/response"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/logger"
 	"github.com/iver-wharf/wharf-provider-azuredevops/internal/azureapi"
