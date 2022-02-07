@@ -74,7 +74,6 @@ func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
 		return
 	}
 
-	imp := importer.NewAzureImporter(c, &client)
 	tokenData := importer.TokenData{
 		ReqToken: importer.ReqToken{
 			Token:    i.Token,
@@ -91,7 +90,8 @@ func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
 		ID: i.ProviderID,
 	}
 
-	ok := imp.InitWritesProblem(tokenData, providerData, c, client)
+	importer := importer.NewAzureImporter(c, &client)
+	ok := importer.InitWritesProblem(tokenData, providerData, c, client)
 	if !ok {
 		return
 	}
@@ -99,11 +99,11 @@ func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
 	azureOrg, azureProj, azureRepo := parseRepoRefParams(i.GroupName, i.ProjectName)
 	switch {
 	case azureProj == "":
-		ok = imp.ImportOrganizationWritesProblem(azureOrg)
+		ok = importer.ImportOrganizationWritesProblem(azureOrg)
 	case azureRepo == "":
-		ok = imp.ImportProjectWritesProblem(azureOrg, azureProj)
+		ok = importer.ImportProjectWritesProblem(azureOrg, azureProj)
 	default:
-		ok = imp.ImportRepositoryWritesProblem(azureOrg, azureProj, azureRepo)
+		ok = importer.ImportRepositoryWritesProblem(azureOrg, azureProj, azureRepo)
 	}
 
 	if !ok {
