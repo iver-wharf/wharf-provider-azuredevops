@@ -30,11 +30,11 @@ serve: swag
 	go run .
 
 swag-force:
-	swag init --parseDependency --parseDepth 1
+	swag init --parseDependency --parseDepth 2
 
 swag:
 ifeq ("$(wildcard docs/docs.go)","")
-	swag init --parseDependency --parseDepth 1
+	swag init --parseDependency --parseDepth 2
 else
 ifeq ("$(filter $(MAKECMDGOALS),swag-force)","")
 	@echo "-- Skipping 'swag init' because docs/docs.go exists."

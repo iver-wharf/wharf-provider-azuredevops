@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/iver-wharf/wharf-api-client-go/pkg/wharfapi"
+	"github.com/iver-wharf/wharf-api-client-go/v2/pkg/wharfapi"
 	"github.com/iver-wharf/wharf-core/pkg/ginutil"
 	"github.com/iver-wharf/wharf-core/pkg/problem"
 	_ "github.com/iver-wharf/wharf-provider-azuredevops/docs"
@@ -74,18 +74,24 @@ func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
 		return
 	}
 
-	importer := importer.NewAzureImporter(c, &client)
-	token := wharfapi.Token{
-		TokenID:  i.TokenID,
-		Token:    i.Token,
-		UserName: i.UserName}
-	provider := wharfapi.Provider{
-		ProviderID: i.ProviderID,
-		Name:       providerName,
-		URL:        i.URL,
-		TokenID:    i.TokenID}
+	tokenData := importer.TokenData{
+		ReqToken: importer.ReqToken{
+			Token:    i.Token,
+			UserName: i.UserName,
+		},
+		ID: i.TokenID,
+	}
+	providerData := importer.ProviderData{
+		ReqProvider: importer.ReqProvider{
+			Name:    providerName,
+			URL:     i.URL,
+			TokenID: i.TokenID,
+		},
+		ID: i.ProviderID,
+	}
 
-	ok := importer.InitWritesProblem(token, provider, c, client)
+	importer := importer.NewAzureImporter(c, &client)
+	ok := importer.InitWritesProblem(tokenData, providerData, c, client)
 	if !ok {
 		return
 	}
@@ -125,7 +131,7 @@ func parseRepoRefParams(wharfGroupName, wharfProjectName string) (azureOrgName, 
 // @Param projectid path int true "wharf project ID"
 // @Param azureDevOpsPR body azureapi.PullRequestEvent _ "AzureDevOps PR"
 // @Param environment query string true "wharf build environment"
-// @Success 200 {object} wharfapi.ProjectRunResponse "OK"
+// @Success 200 {object} response.BuildReferenceWrapper "OK"
 // @Failure 400 {object} problem.Response "Bad request"
 // @Failure 401 {object} problem.Response "Unauthorized or missing jwt token"
 // @Failure 502 {object} problem.Response "Bad gateway"
@@ -167,15 +173,12 @@ func (m importModule) prCreatedTriggerHandler(c *gin.Context) {
 		AuthHeader: c.GetHeader("Authorization"),
 	}
 
-	var resp wharfapi.ProjectRunResponse
-	resp, err := client.PostProjectRun(
-		wharfapi.ProjectRun{
-			ProjectID:   projectID,
-			Stage:       "prcreated",
-			Branch:      strings.TrimPrefix(t.Resource.SourceRefName, "refs/heads/"),
-			Environment: environment,
-		},
-	)
+	params := wharfapi.ProjectStartBuild{
+		Stage:       "prcreated",
+		Branch:      strings.TrimPrefix(t.Resource.SourceRefName, "refs/heads/"),
+		Environment: environment,
+	}
+	resp, err := client.StartProjectBuild(projectID, params, nil)
 
 	if authErr, ok := err.(*wharfapi.AuthError); ok {
 		ginutil.WriteUnauthorizedError(c, authErr,
