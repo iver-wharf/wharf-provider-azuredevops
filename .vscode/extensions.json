@@ -1,0 +1,8 @@
+{
+    "recommendations": [
+        "golang.go",
+        "drewbourne.vscode-remark-lint",
+        "redhat.vscode-yaml",
+        "editorconfig.editorconfig"
+    ]
+}
