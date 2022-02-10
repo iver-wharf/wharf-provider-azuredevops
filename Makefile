@@ -1,7 +1,7 @@
 .PHONY: install check tidy deps \
 	docker docker-run serve swag-force swag \
 	lint lint-md lint-go \
-	lint-fix lint-md-fix
+	lint-fix lint-fix-md lint-fix-go
 
 commit = $(shell git rev-parse HEAD)
 version = latest
@@ -66,3 +66,19 @@ ifeq ("$(filter $(MAKECMDGOALS),swag-force)","")
 endif
 endif
 	@# This comment silences warning "make: Nothing to be done for 'swag'."
+
+lint: lint-md lint-go
+lint-fix: lint-fix-md lint-fix-go
+
+lint-md:
+	npx remark . .github
+
+lint-fix-md:
+	npx remark . .github -o
+
+lint-go:
+	goimports -d $(shell git ls-files "*.go")
+	revive -formatter stylish -config revive.toml ./...
+
+lint-fix-go:
+	goimports -d -w $(shell git ls-files "*.go")

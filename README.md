@@ -72,7 +72,7 @@ files in place.
 ```sh
 make lint-fix
 
-#make lint-fix-go # Go linter does not support fixes
+make lint-fix-go # only lint and fix Go files
 make lint-fix-md # only lint and fix Markdown files
 ```
 
