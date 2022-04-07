@@ -1,12 +1,36 @@
+.PHONY: install check tidy deps \
+	docker docker-run serve swag-force swag \
+	lint lint-md lint-go \
+	lint-fix lint-fix-md lint-fix-go
+
 commit = $(shell git rev-parse HEAD)
 version = latest
 
-build: swag
+ifeq ($(OS),Windows_NT)
+wharf-provider-azuredevops.exe: swag
 	go build .
-	@echo "Built binary found at ./wharf-provider-azuredevops or ./wharf-provider-azuredevops.exe"
+	@echo "Built binary found at ./wharf-provider-azuredevops.exe"
+else
+wharf-provider-azuredevops: swag
+	go build .
+	@echo "Built binary found at ./wharf-provider-azuredevops"
+endif
 
-test: swag
-	go test -v ./...
+install:
+	go install
+
+check: swag
+	go test ./...
+
+tidy:
+	go mod tidy
+
+deps:
+	go install github.com/mgechev/revive@latest
+	go install golang.org/x/tools/cmd/goimports@latest
+	go install github.com/swaggo/swag/cmd/swag@v1.7.1
+	go mod download
+	npm install
 
 docker:
 	docker build . \
@@ -43,6 +67,18 @@ endif
 endif
 	@# This comment silences warning "make: Nothing to be done for 'swag'."
 
-deps:
-	cd .. && go get -u github.com/swaggo/swag/cmd/swag@v1.7.1
-	go mod download
+lint: lint-md lint-go
+lint-fix: lint-fix-md lint-fix-go
+
+lint-md:
+	npx remark . .github
+
+lint-fix-md:
+	npx remark . .github -o
+
+lint-go:
+	goimports -d $(shell git ls-files "*.go")
+	revive -formatter stylish -config revive.toml ./...
+
+lint-fix-go:
+	goimports -d -w $(shell git ls-files "*.go")
