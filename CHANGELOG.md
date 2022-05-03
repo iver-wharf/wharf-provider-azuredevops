@@ -32,6 +32,13 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 
 - Changed Dockerfile for easier windows building. (#48)
 
+- Changed Go runtime from v1.16 to v1.18. (#52)
+
+- Changed version of Docker base images:
+
+  - Alpine: 3.14 -> 3.15 (#52)
+  - Golang: 1.16 -> 1.18 (#52)
+
 ## v2.0.1 (2021-09-10)
 
 - Changed version of Docker base images, relying on "latest" patch version:
