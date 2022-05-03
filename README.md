@@ -36,7 +36,7 @@ over at: <https://pkg.go.dev/github.com/iver-wharf/wharf-provider-azuredevops#Co
 
 ## Development
 
-1. Install Go 1.16 or later: <https://golang.org/>
+1. Install Go 1.18 or later: <https://golang.org/>
 
 2. Install dependencies using [GNU Make](https://www.gnu.org/software/make/) or 
    [GNUWin32](http://gnuwin32.sourceforge.net/install.html)
@@ -86,14 +86,14 @@ or [GNUWin32](http://gnuwin32.sourceforge.net/install.html):
 
 ```console
 $ make docker version=v2.0.0
-STEP 1: FROM golang:1.16.5 AS build
+STEP 1: FROM golang:1.18 AS build
 STEP 2: WORKDIR /src
 --> Using cache de3476fd68836750f453d9d4e7b592549fa924c14e68c9b80069881de8aacc9b
 --> de3476fd688
 STEP 3: ENV GO111MODULE=on
 --> Using cache 4f47a95d0642dcaf5525ee1f19113f97911b1254889c5f2ce29eb6f034bd550b
 --> 4f47a95d064
-STEP 4: RUN go get -u github.com/swaggo/swag/cmd/swag@v1.7.0
+STEP 4: RUN go install github.com/swaggo/swag/cmd/swag@v1.8.1
 ...
 
 Push the image by running:
