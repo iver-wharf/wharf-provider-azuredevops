@@ -14,7 +14,7 @@ var log = logger.NewScoped("REQUESTS")
 
 // GetUnmarshalJSON invokes a HTTP request with basic auth.
 // On success the response body will be unmarshalled as JSON.
-func GetUnmarshalJSON(result interface{}, user, token string, urlPath *url.URL) error {
+func GetUnmarshalJSON(result any, user, token string, urlPath *url.URL) error {
 	body, err := getBodyFromRequest(user, token, urlPath)
 	if err != nil {
 		return err
