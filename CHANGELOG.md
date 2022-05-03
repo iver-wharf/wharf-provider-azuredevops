@@ -17,11 +17,13 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 - BREAKING: Removed support for `github.com/iver-wharf/wharf-api` v4.
   Now requires a minimum of wharf-api v5.0.0. (#49)
 
-- Changed version of `github.com/iver-wharf/wharf-api-client-go`
-  from v1.3.1 -> v2.0.0. (#28, #49)
+- Changed version of dependencies:
 
-- Changed version of `github.com/iver-wharf/wharf-core` from v1.1.0 -> v1.3.0.
-  (#28, #47)
+  - `github.com/gin-gonic/gin` from v1.7.4 to v1.7.7 (#50)
+  - `github.com/iver-wharf/wharf-api-client-go` from v1.3.1 to v2.0.0 (#28, #49)
+  - `github.com/iver-wharf/wharf-core` from v1.1.0 to v1.3.0 (#28, #47)
+  - `github.com/swaggo/gin-swagger` from v1.3.1 to v1.4.3 (#50)
+  - `github.com/swaggo/swag` from v1.7.1 to v1.8.1 (#50)
 
 - Removed `internal/httputils`, which was moved to
   `github.com/iver-wharf/wharf-core/pkg/cacertutil`. (#28)
