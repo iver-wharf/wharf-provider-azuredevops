@@ -71,6 +71,10 @@ docker-run:
 serve: swag
 	go run .
 
+.PHONY: clean-swag
+clean-swag:
+	rm -vrf docs
+
 .PHONY: swag-force
 swag-force: clean-swag swag
 
