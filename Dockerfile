@@ -14,7 +14,7 @@ ARG BUILD_DATE=""
 RUN chmod +x deploy/update-version.sh  \
     && deploy/update-version.sh version.yaml \
     && make swag check \
-    && CGO_ENABLED=0 go build -o wharf-provider-azuredevops ./cmd/wharf-provider-azuredevops
+    && CGO_ENABLED=0 go build -o wharf-provider-azuredevops .
 
 ARG REG=docker.io
 FROM ${REG}/library/alpine:3.15 AS final
