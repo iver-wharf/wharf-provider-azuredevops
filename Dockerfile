@@ -1,8 +1,8 @@
 ARG REG=docker.io
-FROM ${REG}/library/golang:1.16 AS build
+FROM ${REG}/library/golang:1.18 AS build
 WORKDIR /src
 ENV GO111MODULE=on
-RUN go get -u github.com/swaggo/swag/cmd/swag@v1.7.1
+RUN go install github.com/swaggo/swag/cmd/swag@v1.8.1
 COPY go.mod go.sum ./
 RUN go mod download
 
@@ -13,15 +13,15 @@ ARG BUILD_REF="0"
 ARG BUILD_DATE=""
 RUN chmod +x deploy/update-version.sh  \
     && deploy/update-version.sh version.yaml \
-    && make swag \
-    && CGO_ENABLED=0 go build -o main
+    && make swag check \
+    && CGO_ENABLED=0 go build -o wharf-provider-azuredevops .
 
 ARG REG=docker.io
-FROM ${REG}/library/alpine:3.14 AS final
+FROM ${REG}/library/alpine:3.15 AS final
 RUN apk add --no-cache ca-certificates tzdata
 WORKDIR /app
-COPY --from=build /src/main ./
-ENTRYPOINT ["/app/main"]
+COPY --from=build /src/wharf-provider-azuredevops /usr/local/bin/wharf-provider-azuredevops
+ENTRYPOINT ["/usr/local/bin/wharf-provider-azuredevops"]
 
 ARG BUILD_VERSION
 ARG BUILD_GIT_COMMIT

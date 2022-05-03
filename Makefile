@@ -1,37 +1,53 @@
-.PHONY: install check tidy deps \
-	docker docker-run serve swag-force swag \
-	lint lint-md lint-go \
-	lint-fix lint-fix-md lint-fix-go
 
 commit = $(shell git rev-parse HEAD)
 version = latest
 
 ifeq ($(OS),Windows_NT)
 wharf-provider-azuredevops.exe: swag
-	go build .
-	@echo "Built binary found at ./wharf-provider-azuredevops.exe"
+	go build -o wharf-provider-azuredevops.exe .
 else
 wharf-provider-azuredevops: swag
-	go build .
-	@echo "Built binary found at ./wharf-provider-azuredevops"
+	go build -o wharf-provider-azuredevops .
 endif
 
-install:
+.PHONY: clean
+clean: clean-swag clean-build
+
+.PHONY: clean-build
+clean-build:
+ifeq ($(OS),Windows_NT)
+	rm -rfv wharf-provider-azuredevops.exe
+else
+	rm -rfv wharf-provider-azuredevops
+endif
+
+.PHONY: install
+install: swag
 	go install
 
+.PHONY: check
 check: swag
 	go test ./...
 
+.PHONY: tidy
 tidy:
 	go mod tidy
 
-deps:
+.PHONY: deps
+deps: deps-go deps-npm
+
+.PHONY: deps-go
+deps-go:
 	go install github.com/mgechev/revive@latest
 	go install golang.org/x/tools/cmd/goimports@latest
-	go install github.com/swaggo/swag/cmd/swag@v1.7.1
+	go install github.com/swaggo/swag/cmd/swag@v1.8.1
 	go mod download
+
+.PHONY: deps-npm
+deps-npm:
 	npm install
 
+.PHONY: docker
 docker:
 	docker build . \
 		--pull \
@@ -47,26 +63,30 @@ ifneq "$(version)" "latest"
 	@echo "docker push quay.io/iver-wharf/wharf-provider-azuredevops:$(version)"
 endif
 
+.PHONY: docker-run
 docker-run:
 	docker run --rm -it quay.io/iver-wharf/wharf-provider-azuredevops:$(version)
 
+.PHONY: serve
 serve: swag
 	go run .
 
-swag-force:
+.PHONY: clean-swag
+clean-swag:
+	rm -vrf docs
+
+.PHONY: swag-force
+swag-force: clean-swag swag
+
+.PHONY: swag
+swag: docs
+
+docs:
 	swag init --parseDependency --parseDepth 2
 
-swag:
-ifeq ("$(wildcard docs/docs.go)","")
-	swag init --parseDependency --parseDepth 2
-else
-ifeq ("$(filter $(MAKECMDGOALS),swag-force)","")
-	@echo "-- Skipping 'swag init' because docs/docs.go exists."
-	@echo "-- Run 'make' with additional target 'swag-force' to always run it."
-endif
-endif
-	@# This comment silences warning "make: Nothing to be done for 'swag'."
-
+.PHONY: lint lint-fix \
+	lint-md lint-go \
+	lint-fix-md lint-fix-go
 lint: lint-md lint-go
 lint-fix: lint-fix-md lint-fix-go
 
@@ -77,8 +97,10 @@ lint-fix-md:
 	npx remark . .github -o
 
 lint-go:
-	goimports -d $(shell git ls-files "*.go")
+	@echo goimports -d '**/*.go'
+	@goimports -d $(shell git ls-files "*.go")
 	revive -formatter stylish -config revive.toml ./...
 
 lint-fix-go:
-	goimports -d -w $(shell git ls-files "*.go")
+	@echo goimports -d -w '**/*.go'
+	@goimports -d -w $(shell git ls-files "*.go")
