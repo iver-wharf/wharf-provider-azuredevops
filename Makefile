@@ -4,10 +4,10 @@ version = latest
 
 ifeq ($(OS),Windows_NT)
 wharf-provider-azuredevops.exe: swag
-	go build . -o wharf-provider-azuredevops.exe
+	go build -o wharf-provider-azuredevops.exe .
 else
 wharf-provider-azuredevops: swag
-	go build . -o wharf-provider-azuredevops
+	go build -o wharf-provider-azuredevops .
 endif
 
 .PHONY: clean
