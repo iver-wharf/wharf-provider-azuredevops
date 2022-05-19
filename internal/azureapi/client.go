@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"path"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -227,8 +228,8 @@ func (c *Client) GetRepositoryBranchesWritesProblem(orgName, projectNameOrID, re
 }
 
 func (c *Client) newGetRepository(orgName, projectNameOrID, repoNameOrID string) (*url.URL, error) {
-	urlPath := *c.BaseURLParsed
-	urlPath.Path = fmt.Sprintf("%s/%s/_apis/git/repositories/%s", orgName, projectNameOrID, repoNameOrID)
+	urlPath := c.newUrlWithPath("%s/%s/_apis/git/repositories/%s",
+		orgName, projectNameOrID, repoNameOrID)
 
 	q := url.Values{}
 	q.Add("api-version", "5.0")
@@ -238,8 +239,7 @@ func (c *Client) newGetRepository(orgName, projectNameOrID, repoNameOrID string)
 }
 
 func (c *Client) newGetRepositories(orgName, projectNameOrID string) (*url.URL, error) {
-	urlPath := *c.BaseURLParsed
-	urlPath.Path = fmt.Sprintf("%s/%s/_apis/git/repositories", orgName, projectNameOrID)
+	urlPath := c.newUrlWithPath("%s/%s/_apis/git/repositories", orgName, projectNameOrID)
 
 	q := url.Values{}
 	q.Add("api-version", "5.0")
@@ -249,8 +249,7 @@ func (c *Client) newGetRepositories(orgName, projectNameOrID string) (*url.URL, 
 }
 
 func (c *Client) newGetFile(orgName, projectNameOrID, repoNameOrID, filePath string) (*url.URL, error) {
-	urlPath := *c.BaseURLParsed
-	urlPath.Path = fmt.Sprintf("%s/%s/_apis/git/repositories/%s/items",
+	urlPath := c.newUrlWithPath("%s/%s/_apis/git/repositories/%s/items",
 		orgName, projectNameOrID, repoNameOrID)
 
 	q := url.Values{}
@@ -261,8 +260,7 @@ func (c *Client) newGetFile(orgName, projectNameOrID, repoNameOrID, filePath str
 }
 
 func (c *Client) newGetProject(orgName, projectNameOrID string) (*url.URL, error) {
-	urlPath := *c.BaseURLParsed
-	urlPath.Path = fmt.Sprintf("%s/_apis/projects/%s", orgName, projectNameOrID)
+	urlPath := c.newUrlWithPath("%s/_apis/projects/%s", orgName, projectNameOrID)
 
 	q := url.Values{}
 	q.Add("api-version", "5.0")
@@ -272,8 +270,7 @@ func (c *Client) newGetProject(orgName, projectNameOrID string) (*url.URL, error
 }
 
 func (c *Client) newGetProjects(orgName string) (*url.URL, error) {
-	urlPath := *c.BaseURLParsed
-	urlPath.Path = fmt.Sprintf("%s/_apis/projects", orgName)
+	urlPath := c.newUrlWithPath("%s/_apis/projects", orgName)
 
 	q := url.Values{}
 	q.Add("api-version", "5.0")
@@ -283,8 +280,7 @@ func (c *Client) newGetProjects(orgName string) (*url.URL, error) {
 }
 
 func (c *Client) newGetGitRefs(orgName, projectNameOrID, repoNameOrID, refsFilter string) (*url.URL, error) {
-	urlPath := *c.BaseURLParsed
-	urlPath.Path = fmt.Sprintf("%s/%s/_apis/git/repositories/%s/refs",
+	urlPath := c.newUrlWithPath("%s/%s/_apis/git/repositories/%s/refs",
 		orgName, projectNameOrID, repoNameOrID)
 
 	q := url.Values{}
@@ -293,4 +289,10 @@ func (c *Client) newGetGitRefs(orgName, projectNameOrID, repoNameOrID, refsFilte
 	urlPath.RawQuery = q.Encode()
 
 	return &urlPath, nil
+}
+
+func (c *Client) newUrlWithPath(format string, args ...any) url.URL {
+	u := *c.BaseURLParsed
+	u.Path = path.Join(u.Path, fmt.Sprintf(format, args...))
+	return u
 }
