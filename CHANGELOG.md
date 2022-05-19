@@ -12,6 +12,20 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
+## v3.0.1 (WIP)
+
+- Fixed code overriding the path in the provider's URL. It will now join
+  together the given URL path with the API endpoint's path. (#54)
+
+  E.g:
+
+  - Given: `https://azuredevops.example.com/customprefix`
+  - Before: `https://azuredevops.example.com/DefaultCollection/_apis/projects`
+  - Now: `https://azuredevops.example.com/customprefix/DefaultCollection/_apis/projects`
+
+- Fixed not finding existing provider if one already existed in the wharf-api.
+  (#54)
+
 ## v3.0.0 (2022-05-10)
 
 - BREAKING: Removed support for `github.com/iver-wharf/wharf-api` v4.
