@@ -99,10 +99,22 @@ func (m importModule) runAzureDevOpsHandler(c *gin.Context) {
 	azureOrg, azureProj, azureRepo := parseRepoRefParams(i.GroupName, i.ProjectName)
 	switch {
 	case azureProj == "":
+		log.Debug().
+			WithString("org", azureOrg).
+			Message("Importing all repos from org")
 		ok = importer.ImportOrganizationWritesProblem(azureOrg)
 	case azureRepo == "":
+		log.Debug().
+			WithString("org", azureOrg).
+			WithString("project", azureProj).
+			Message("Importing all repos from project")
 		ok = importer.ImportProjectWritesProblem(azureOrg, azureProj)
 	default:
+		log.Debug().
+			WithString("org", azureOrg).
+			WithString("project", azureProj).
+			WithString("repo", azureRepo).
+			Message("Importing specific repo from project")
 		ok = importer.ImportRepositoryWritesProblem(azureOrg, azureProj, azureRepo)
 	}
 

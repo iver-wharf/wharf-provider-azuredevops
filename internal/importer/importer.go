@@ -369,6 +369,8 @@ func (i *azureImporter) getOrPostProviderWritesProblem(providerData ProviderData
 				fmt.Sprintf("Unable to get provider by ID %d", providerData.ID))
 			return response.Provider{}, false
 		}
+		log.Debug().WithUint("providerId", dbProvider.ProviderID).
+			Message("Got existing provider from DB.")
 		return dbProvider, true
 	}
 
@@ -378,34 +380,29 @@ func (i *azureImporter) getOrPostProviderWritesProblem(providerData ProviderData
 		URL:  &providerData.URL,
 	}
 	searchResults, err := i.wharf.GetProviderList(search)
-	if err != nil || len(searchResults.List) == 0 {
-		log.Warn().
-			WithError(err).
-			WithInt("providersFound", len(searchResults.List)).
-			Message("Unable to get provider. Will try to create one instead.")
-		createdProvider, err := i.wharf.CreateProvider(request.Provider{
-			Name:    request.ProviderName(providerData.Name),
-			URL:     providerData.URL,
-			TokenID: providerData.TokenID,
-		})
-		if err != nil {
-			log.Error().WithError(err).Message("Unable to create provider.")
-			ginutil.WriteAPIClientWriteError(i.c, err,
-				fmt.Sprintf("Unable to get or create provider from %q.", providerData.URL))
-			return response.Provider{}, false
-		}
-		return createdProvider, true
-	}
 
-	var foundProvider response.Provider
-	var found bool
-	for _, p := range searchResults.List {
-		if p.ProviderID == providerData.ID {
-			foundProvider = p
-			found = true
-			break
+	if err == nil {
+		for _, p := range searchResults.List {
+			if p.URL == providerData.URL {
+				return p, true
+			}
 		}
 	}
 
-	return foundProvider, found
+	log.Warn().
+		WithError(err).
+		WithInt("providersFound", len(searchResults.List)).
+		Message("Unable to get provider. Will try to create one instead.")
+	createdProvider, err := i.wharf.CreateProvider(request.Provider{
+		Name:    request.ProviderName(providerData.Name),
+		URL:     providerData.URL,
+		TokenID: providerData.TokenID,
+	})
+	if err != nil {
+		log.Error().WithError(err).Message("Unable to create provider.")
+		ginutil.WriteAPIClientWriteError(i.c, err,
+			fmt.Sprintf("Unable to get or create provider from %q.", providerData.URL))
+		return response.Provider{}, false
+	}
+	return createdProvider, true
 }
