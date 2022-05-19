@@ -12,7 +12,7 @@ This project tries to follow [SemVer 2.0.0](https://semver.org/).
 	https://changelog.md/
 -->
 
-## v3.0.1 (WIP)
+## v3.0.1 (2022-05-19)
 
 - Fixed code overriding the path in the provider's URL. It will now join
   together the given URL path with the API endpoint's path. (#54)
