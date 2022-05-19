@@ -228,7 +228,7 @@ func (c *Client) GetRepositoryBranchesWritesProblem(orgName, projectNameOrID, re
 }
 
 func (c *Client) newGetRepository(orgName, projectNameOrID, repoNameOrID string) (*url.URL, error) {
-	urlPath := c.newUrlWithPath("%s/%s/_apis/git/repositories/%s",
+	urlPath := c.newURLWithPath("%s/%s/_apis/git/repositories/%s",
 		orgName, projectNameOrID, repoNameOrID)
 
 	q := url.Values{}
@@ -239,7 +239,7 @@ func (c *Client) newGetRepository(orgName, projectNameOrID, repoNameOrID string)
 }
 
 func (c *Client) newGetRepositories(orgName, projectNameOrID string) (*url.URL, error) {
-	urlPath := c.newUrlWithPath("%s/%s/_apis/git/repositories", orgName, projectNameOrID)
+	urlPath := c.newURLWithPath("%s/%s/_apis/git/repositories", orgName, projectNameOrID)
 
 	q := url.Values{}
 	q.Add("api-version", "5.0")
@@ -249,7 +249,7 @@ func (c *Client) newGetRepositories(orgName, projectNameOrID string) (*url.URL, 
 }
 
 func (c *Client) newGetFile(orgName, projectNameOrID, repoNameOrID, filePath string) (*url.URL, error) {
-	urlPath := c.newUrlWithPath("%s/%s/_apis/git/repositories/%s/items",
+	urlPath := c.newURLWithPath("%s/%s/_apis/git/repositories/%s/items",
 		orgName, projectNameOrID, repoNameOrID)
 
 	q := url.Values{}
@@ -260,7 +260,7 @@ func (c *Client) newGetFile(orgName, projectNameOrID, repoNameOrID, filePath str
 }
 
 func (c *Client) newGetProject(orgName, projectNameOrID string) (*url.URL, error) {
-	urlPath := c.newUrlWithPath("%s/_apis/projects/%s", orgName, projectNameOrID)
+	urlPath := c.newURLWithPath("%s/_apis/projects/%s", orgName, projectNameOrID)
 
 	q := url.Values{}
 	q.Add("api-version", "5.0")
@@ -270,7 +270,7 @@ func (c *Client) newGetProject(orgName, projectNameOrID string) (*url.URL, error
 }
 
 func (c *Client) newGetProjects(orgName string) (*url.URL, error) {
-	urlPath := c.newUrlWithPath("%s/_apis/projects", orgName)
+	urlPath := c.newURLWithPath("%s/_apis/projects", orgName)
 
 	q := url.Values{}
 	q.Add("api-version", "5.0")
@@ -280,7 +280,7 @@ func (c *Client) newGetProjects(orgName string) (*url.URL, error) {
 }
 
 func (c *Client) newGetGitRefs(orgName, projectNameOrID, repoNameOrID, refsFilter string) (*url.URL, error) {
-	urlPath := c.newUrlWithPath("%s/%s/_apis/git/repositories/%s/refs",
+	urlPath := c.newURLWithPath("%s/%s/_apis/git/repositories/%s/refs",
 		orgName, projectNameOrID, repoNameOrID)
 
 	q := url.Values{}
@@ -291,7 +291,7 @@ func (c *Client) newGetGitRefs(orgName, projectNameOrID, repoNameOrID, refsFilte
 	return &urlPath, nil
 }
 
-func (c *Client) newUrlWithPath(format string, args ...any) url.URL {
+func (c *Client) newURLWithPath(format string, args ...any) url.URL {
 	u := *c.BaseURLParsed
 	u.Path = path.Join(u.Path, fmt.Sprintf(format, args...))
 	return u
